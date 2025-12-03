@@ -1,0 +1,44 @@
+```
+arc-projeto/
+│
+├── 📄 Arquivos de Configuração
+│   ├── package.json              # Dependências e scripts
+│   ├── hardhat.config.ts         # Configuração do Hardhat
+│   ├── tsconfig.json             # Configuração TypeScript
+│   ├── .env.example              # Exemplo de variáveis de ambiente
+│   └── .gitignore                # Arquivos ignorados pelo Git
+│
+├── 📜 Contratos Inteligentes
+│   └── contracts/
+│       ├── ArcNFT.sol            # Contrato NFT ERC721
+│       └── ArcMarketplace.sol    # Contrato Marketplace
+│
+├── 🧪 Testes
+│   └── test/
+│       ├── ArcNFT.test.ts        # 12 testes do NFT
+│       └── ArcMarketplace.test.ts # 14 testes do Marketplace
+│
+├── 🚀 Scripts
+│   └── scripts/
+│       ├── README.md             # Guia dos scripts
+│       ├── deploy.ts             # Deploy automático
+│       ├── check-balance.ts      # Verifica saldo e config
+│       ├── interact.ts           # Mint + List básico
+│       ├── batch-mint.ts         # Mint múltiplos NFTs
+│       ├── create-auction.ts     # Criar leilão
+│       └── stats.ts              # Estatísticas do marketplace
+│
+├── 📚 Documentação
+│   ├── README.md                 # Documentação principal
+│   ├── SUMMARY.md                # Resumo executivo
+│   ├── QUICKSTART.md             # Guia rápido (5 min)
+│   ├── METAMASK-SETUP.md         # Setup da wallet
+│   └── CHEATSHEET.md             # Comandos úteis
+│
+├── 🔨 Build Artifacts (gerados)
+│   ├── artifacts/                # Contratos compilados
+│   ├── cache/                    # Cache do Hardhat
+│   └── typechain-types/          # Types TypeScript gerados
+│
+└── 📦 Dependências
+    └── node_modules/             # Pacotes npm (não versionar)

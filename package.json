@@ -1,0 +1,57 @@
+{
+  "name": "arc-nft",
+  "version": "1.0.0",
+  "description": "Complete NFT Marketplace for Arc Layer 1 with web interface",
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:gas": "REPORT_GAS=true hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network arcTestnet",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "verify": "hardhat verify --network arcTestnet",
+    "node": "hardhat node",
+    "clean": "hardhat clean",
+    "check": "hardhat run scripts/check-balance.ts --network arcTestnet",
+    "interact": "hardhat run scripts/interact.ts --network arcTestnet",
+    "batch-mint": "hardhat run scripts/batch-mint.ts --network arcTestnet",
+    "auction": "hardhat run scripts/create-auction.ts --network arcTestnet",
+    "stats": "hardhat run scripts/stats.ts --network arcTestnet",
+    "console": "hardhat console --network arcTestnet"
+  },
+  "keywords": [
+    "arc",
+    "nft",
+    "marketplace",
+    "web3",
+    "solidity"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-ledger": "^3.0.1",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@typechain/ethers-v6": "^0.5.0",
+    "@typechain/hardhat": "^9.0.0",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.10.6",
+    "chai": "^4.3.10",
+    "ethers": "^6.10.0",
+    "hardhat": "^3.0.16",
+    "hardhat-gas-reporter": "^1.0.9",
+    "solidity-coverage": "^0.8.5",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.1",
+    "dotenv": "^16.3.1"
+  }
+}
