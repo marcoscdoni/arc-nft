@@ -17,21 +17,21 @@ export function NFTCard({ id, name, image, price, owner }: NFTCardProps) {
   return (
     <Link
       href={`/nft/${id}`}
-      className="group overflow-hidden rounded-lg border border-gray-800 bg-gray-900 transition hover:border-violet-500"
+      className="glass-card glass-card-hover group overflow-hidden rounded-2xl border border-white/10"
     >
       <div className="aspect-square overflow-hidden">
         <img
           src={image}
           alt={name}
-          className="h-full w-full object-cover transition group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
         />
       </div>
-      <div className="p-4">
+      <div className="p-5">
         <h3 className="font-semibold text-white">{name}</h3>
-        <p className="mt-1 text-sm text-gray-400">{owner}</p>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-sm text-gray-400">Price</span>
-          <span className="font-semibold text-white">{formattedPrice} USDC</span>
+        <p className="mt-1 text-sm text-slate-400">{owner}</p>
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-white/5 px-3 py-2">
+          <span className="text-xs font-medium text-slate-500">Price</span>
+          <span className="font-semibold text-white">{formattedPrice} <span className="text-sm text-blue-400">USDC</span></span>
         </div>
       </div>
     </Link>

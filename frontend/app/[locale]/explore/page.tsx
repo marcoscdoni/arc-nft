@@ -113,11 +113,14 @@ export default function ExplorePage() {
     })
 
   return (
-    <div className="min-h-screen bg-black py-12">
+    <div className="relative min-h-screen py-12">
+      {/* Background gradients */}
+      <div className="animated-gradient fixed inset-0 -z-10 opacity-30" />
+      
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white">Explore NFTs</h1>
-          <p className="mt-2 text-gray-400">
+          <p className="mt-2 text-slate-400">
             Discover unique digital assets on Arc Layer 1
           </p>
         </div>
@@ -126,13 +129,13 @@ export default function ExplorePage() {
         <div className="mb-8 space-y-4">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search NFTs by name..."
-              className="w-full rounded-lg border border-gray-700 bg-gray-900 py-3 pl-12 pr-4 text-white placeholder-gray-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+              className="glass-card w-full rounded-xl border border-white/10 py-3 pl-12 pr-4 text-white placeholder-slate-500 transition-all focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
             />
           </div>
 
@@ -142,10 +145,10 @@ export default function ExplorePage() {
               <button
                 key={cat.id}
                 onClick={() => setCategory(cat.id as typeof category)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
                   category === cat.id
-                    ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/50'
-                    : 'border border-gray-700 bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/30'
+                    : 'glass-card border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 {cat.label}
@@ -155,7 +158,7 @@ export default function ExplorePage() {
 
           {/* Sort Options */}
           <div className="flex items-center gap-3 overflow-x-auto pb-2">
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-slate-400">
               <SlidersHorizontal className="h-4 w-4" />
               Sort by:
             </div>
@@ -165,10 +168,10 @@ export default function ExplorePage() {
                 <button
                   key={option.id}
                   onClick={() => setSortBy(option.id as typeof sortBy)}
-                  className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition ${
                     sortBy === option.id
-                      ? 'bg-violet-600 text-white'
-                      : 'border border-gray-700 bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white'
+                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white'
+                      : 'glass-card border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -180,7 +183,7 @@ export default function ExplorePage() {
         </div>
 
         {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-400">
+        <div className="mb-4 text-sm text-slate-400">
           {filteredNFTs.length} {filteredNFTs.length === 1 ? 'item' : 'items'} found
         </div>
 
@@ -199,10 +202,10 @@ export default function ExplorePage() {
             ))}
           </div>
         ) : (
-          <div className="flex min-h-[400px] items-center justify-center rounded-lg border border-gray-800 bg-gray-900/50">
+          <div className="glass-card flex min-h-[400px] items-center justify-center rounded-2xl border border-white/10">
             <div className="text-center">
               <h3 className="text-xl font-semibold text-white">No NFTs Found</h3>
-              <p className="mt-2 text-gray-400">
+              <p className="mt-2 text-slate-400">
                 Try adjusting your search or filters
               </p>
             </div>
@@ -212,4 +215,3 @@ export default function ExplorePage() {
     </div>
   )
 }
-

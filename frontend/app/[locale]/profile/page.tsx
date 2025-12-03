@@ -52,10 +52,11 @@ export default function ProfilePage() {
 
   if (!isConnected) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="text-center">
+      <div className="relative flex min-h-screen items-center justify-center">
+        <div className="animated-gradient fixed inset-0 -z-10 opacity-30" />
+        <div className="glass-card max-w-md rounded-2xl border border-white/10 p-12 text-center">
           <h2 className="text-2xl font-bold text-white">Connect Your Wallet</h2>
-          <p className="mt-2 text-gray-400">
+          <p className="mt-2 text-slate-400">
             Please connect your wallet to view your profile
           </p>
         </div>
@@ -64,12 +65,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black py-12">
+    <div className="relative min-h-screen py-12">
+      <div className="animated-gradient fixed inset-0 -z-10 opacity-30" />
+      
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Profile Header */}
-        <div className="mb-8 overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900 to-black">
+        <div className="glass-card glow-violet mb-8 overflow-hidden rounded-3xl border border-white/10">
           {/* Cover Image */}
-          <div className="h-48 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600" />
+          <div className="h-48 bg-gradient-to-r from-violet-600 via-purple-600 to-cyan-600" />
           
           <div className="relative px-6 pb-6">
             {/* Avatar */}
@@ -82,10 +85,10 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <button className="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800">
+              <button className="glass-card rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10">
                 <Share2 className="h-4 w-4" />
               </button>
-              <button className="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800">
+              <button className="glass-card rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10">
                 <Settings className="h-4 w-4" />
               </button>
             </div>
@@ -96,12 +99,12 @@ export default function ProfilePage() {
               </h1>
               <button
                 onClick={copyAddress}
-                className="mt-2 flex items-center gap-2 text-sm text-gray-400 transition hover:text-white"
+                className="mt-2 flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
               >
                 {address}
                 <Copy className="h-4 w-4" />
               </button>
-              <p className="mt-4 max-w-2xl text-gray-400">
+              <p className="mt-4 max-w-2xl text-slate-400">
                 Digital artist and NFT collector on Arc Layer 1. Exploring the intersection of art and blockchain technology.
               </p>
             </div>
@@ -109,9 +112,9 @@ export default function ProfilePage() {
             {/* Stats */}
             <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
               {stats.map((stat) => (
-                <div key={stat.label} className="rounded-lg border border-gray-800 bg-gray-900/50 p-4">
+                <div key={stat.label} className="glass-card rounded-xl border border-white/10 p-4 transition-all hover:bg-white/10">
                   <div className="text-2xl font-bold text-white">{stat.value}</div>
-                  <div className="text-sm text-gray-400">{stat.label}</div>
+                  <div className="text-sm text-slate-400">{stat.label}</div>
                 </div>
               ))}
             </div>
@@ -119,7 +122,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Tabs */}
-        <div className="mb-8 flex gap-4 border-b border-gray-800">
+        <div className="mb-8 flex gap-4 border-b border-white/10">
           {(['collected', 'created', 'listed'] as const).map((tab) => (
             <button
               key={tab}
@@ -127,7 +130,7 @@ export default function ProfilePage() {
               className={`border-b-2 px-4 py-3 font-medium capitalize transition ${
                 activeTab === tab
                   ? 'border-violet-500 text-white'
-                  : 'border-transparent text-gray-400 hover:text-white'
+                  : 'border-transparent text-slate-400 hover:text-white'
               }`}
             >
               {tab}

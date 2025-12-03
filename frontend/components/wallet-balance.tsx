@@ -3,9 +3,45 @@
 import { useAccount, useBalance } from 'wagmi'
 import { formatUnits } from 'viem'
 import { TOKENS } from '@/lib/tokens'
+import { Wallet, ChevronDown } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
 
 export function WalletBalance() {
   const { address, isConnected } = useAccount()
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
   
   // Get native USDC balance
   const { data: usdcBalance, isLoading: usdcLoading } = useBalance({
@@ -50,28 +86,67 @@ export function WalletBalance() {
     return null
   }
 
-  return (
-    <div className="flex items-center gap-2">
-      {/* USDC Balance - only show if has balance or finished loading */}
-      {!usdcLoading && usdcBalance && (
-        <div className="flex h-10 items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-900/80 px-3 backdrop-blur-sm">
-          <div className="h-2 w-2 rounded-full bg-blue-400" />
-          <span className="text-xs font-medium text-gray-400">USDC</span>
-          <span className="text-sm font-semibold text-white">
-            {usdcFormatted}
-          </span>
-        </div>
-      )}
+  // Calculate total value in USD (assuming EURC ≈ USDC for display purposes)
+  const totalValue = parseFloat(usdcFormatted) + parseFloat(eurcFormatted)
 
-      {/* EURC Balance - only show if has balance */}
-      {!eurcLoading && eurcBalance && eurcBalance.value > 0n && (
-        <div className="flex h-10 items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-900/80 px-3 backdrop-blur-sm">
-          <div className="h-2 w-2 rounded-full bg-purple-400" />
-          <span className="text-xs font-medium text-gray-400">EURC</span>
-          <span className="text-sm font-semibold text-white">
-            {eurcFormatted}
-          </span>
-        </div>
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Compact wallet button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="glass-card flex h-10 items-center gap-2 rounded-xl px-3 py-2 transition-all hover:bg-white/10"
+      >
+        <Wallet className="h-4 w-4 text-violet-400" />
+        <span className="text-sm font-semibold text-white">
+          ${totalValue.toFixed(2)}
+        </span>
+        <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {/* Dropdown with detailed balances */}
+      {isOpen && (
+          <div className="absolute right-0 top-12 z-50 w-64 rounded-xl border border-violet-500/30 bg-slate-900/95 backdrop-blur-xl p-3 shadow-xl shadow-black/50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="space-y-2">
+              <div className="mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
+                <Wallet className="h-4 w-4 text-violet-400" />
+                <span className="text-xs font-medium text-slate-400">Wallet Balance</span>
+              </div>
+              
+              {/* USDC Balance */}
+              {!usdcLoading && usdcBalance && (
+                <div className="flex items-center justify-between rounded-lg bg-white/5 p-2.5 transition-colors hover:bg-white/10">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-400" />
+                    <span className="text-xs font-medium text-slate-400">USDC</span>
+                  </div>
+                  <span className="text-sm font-semibold text-white">
+                    {usdcFormatted}
+                  </span>
+                </div>
+              )}
+
+              {/* EURC Balance */}
+              {!eurcLoading && eurcBalance && eurcBalance.value > 0n && (
+                <div className="flex items-center justify-between rounded-lg bg-white/5 p-2.5 transition-colors hover:bg-white/10">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-purple-400" />
+                    <span className="text-xs font-medium text-slate-400">EURC</span>
+                  </div>
+                  <span className="text-sm font-semibold text-white">
+                    {eurcFormatted}
+                  </span>
+                </div>
+              )}
+
+              {/* Total */}
+              <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2">
+                <span className="text-xs font-medium text-slate-500">Total Value</span>
+                <span className="text-sm font-bold text-white">
+                  ${totalValue.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
       )}
     </div>
   )

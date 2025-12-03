@@ -21,17 +21,17 @@ export function Navbar() {
   ], [t])
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-gray-800 bg-black/80 backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 w-full border-b border-white/10 glass-card">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-600">
+            <Link href="/" className="group flex items-center space-x-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 transition-transform group-hover:scale-105">
                 <Wallet className="h-6 w-6 text-white" />
               </div>
               <span className="text-xl font-bold text-white">
-                Arc<span className="text-violet-500">NFT</span>
+                Arc<span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">NFT</span>
               </span>
             </Link>
           </div>
@@ -43,16 +43,16 @@ export function Navbar() {
                 <Link
                   key={item.key}
                   href={item.href}
-                  className="flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-150 hover:bg-gray-800 hover:text-white"
+                  className="flex items-center space-x-2 rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-white/10 hover:text-white"
                 >
                   <item.icon className="h-4 w-4" />
-                  <span className="transition-opacity duration-150">{item.name}</span>
+                  <span>{item.name}</span>
                 </Link>
               ))}
             </div>
           </div>
 
-          {/* Connect Button */}
+          {/* Connect Button & Wallet */}
           <div className="hidden md:flex md:items-center md:gap-3">
             <WalletBalance />
             <LanguageSelector />
@@ -64,7 +64,7 @@ export function Navbar() {
           {/* Mobile menu button */}
           <button
             type="button"
-            className="md:hidden rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white"
+            className="md:hidden rounded-xl p-2 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? (
@@ -78,13 +78,13 @@ export function Navbar() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="border-t border-gray-800 md:hidden">
+        <div className="border-t border-white/10 bg-black/40 backdrop-blur-xl md:hidden">
           <div className="space-y-1 px-2 pb-3 pt-2">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="flex items-center space-x-3 rounded-lg px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
+                className="flex items-center space-x-3 rounded-xl px-3 py-2 text-base font-medium text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <item.icon className="h-5 w-5" />
