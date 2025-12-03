@@ -2,53 +2,185 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { Copy, ExternalLink, Settings, Share2 } from 'lucide-react'
+import { Copy, ExternalLink, Settings, Share2, Edit2, Save, X, Upload } from 'lucide-react'
 import { NFTCard } from '@/components/nft-card'
+import { getProfile, upsertProfile, getNFTs, type Profile } from '@/lib/supabase'
+import { uploadImage } from '@/lib/nft-storage'
 
 export default function ProfilePage() {
   const { address, isConnected } = useAccount()
   const [activeTab, setActiveTab] = useState<'collected' | 'created' | 'listed'>('collected')
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [nfts, setNfts] = useState<any[]>([])
+  const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    username: '',
+    bio: '',
+    twitter_handle: '',
+    discord_handle: '',
+    website_url: '',
+  })
+  
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [bannerFile, setBannerFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string>('')
+  const [bannerPreview, setBannerPreview] = useState<string>('')
 
-  // Mock data - replace with actual contract data
-  const mockNFTs = [
-    {
-      id: '1',
-      name: 'Cosmic Journey #42',
-      image: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=400&h=400&fit=crop',
-      price: '1250.00',
-      creator: '0x1234...5678',
-    },
-    {
-      id: '2',
-      name: 'Digital Dreams',
-      image: 'https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400&h=400&fit=crop',
-      price: '890.50',
-      creator: '0x1234...5678',
-    },
-    {
-      id: '3',
-      name: 'Abstract Reality',
-      image: 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=400&fit=crop',
-      price: '2100.00',
-      creator: '0x1234...5678',
-    },
-  ]
+  // Load profile and NFTs on mount
+  useEffect(() => {
+    if (address && isConnected) {
+      loadProfileData()
+      loadNFTs()
+    }
+  }, [address, isConnected, activeTab])
 
-  const stats = [
-    { label: 'Collected', value: '24' },
-    { label: 'Created', value: '12' },
-    { label: 'Total Value', value: '45,890 USDC' },
-    { label: 'Floor Price', value: '890 USDC' },
-  ]
+  const loadProfileData = async () => {
+    if (!address) return
+    
+    setIsLoading(true)
+    try {
+      const profileData = await getProfile(address)
+      if (profileData) {
+        setProfile(profileData)
+        setFormData({
+          username: profileData.username || '',
+          bio: profileData.bio || '',
+          twitter_handle: profileData.twitter_handle || '',
+          discord_handle: profileData.discord_handle || '',
+          website_url: profileData.website_url || '',
+        })
+        setAvatarPreview(profileData.avatar_url || '')
+        setBannerPreview(profileData.banner_url || '')
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const loadNFTs = async () => {
+    if (!address) return
+    
+    try {
+      const filters = activeTab === 'collected' 
+        ? { owner: address }
+        : activeTab === 'created'
+        ? { creator: address }
+        : { owner: address } // For listed, we'd need to join with listings table
+      
+      const nftData = await getNFTs(filters)
+      setNfts(nftData)
+    } catch (error) {
+      console.error('Error loading NFTs:', error)
+    }
+  }
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setAvatarFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setBannerFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setBannerPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSaveProfile = async () => {
+    if (!address) return
+    
+    setIsSaving(true)
+    try {
+      let avatarUrl = profile?.avatar_url || ''
+      let bannerUrl = profile?.banner_url || ''
+      
+      // Upload avatar if changed
+      if (avatarFile) {
+        avatarUrl = await uploadImage(avatarFile)
+      }
+      
+      // Upload banner if changed
+      if (bannerFile) {
+        bannerUrl = await uploadImage(bannerFile)
+      }
+      
+      // Save profile to Supabase
+      const updatedProfile = await upsertProfile({
+        wallet_address: address,
+        username: formData.username || null,
+        bio: formData.bio || null,
+        avatar_url: avatarUrl || null,
+        banner_url: bannerUrl || null,
+        twitter_handle: formData.twitter_handle || null,
+        discord_handle: formData.discord_handle || null,
+        website_url: formData.website_url || null,
+      })
+      
+      if (updatedProfile) {
+        setProfile(updatedProfile)
+        setIsEditing(false)
+        setAvatarFile(null)
+        setBannerFile(null)
+        alert('✅ Profile updated successfully!')
+      } else {
+        alert('❌ Failed to update profile')
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      alert('❌ Error saving profile')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setFormData({
+      username: profile?.username || '',
+      bio: profile?.bio || '',
+      twitter_handle: profile?.twitter_handle || '',
+      discord_handle: profile?.discord_handle || '',
+      website_url: profile?.website_url || '',
+    })
+    setAvatarPreview(profile?.avatar_url || '')
+    setBannerPreview(profile?.banner_url || '')
+    setAvatarFile(null)
+    setBannerFile(null)
+  }
 
   const copyAddress = () => {
     if (address) {
       navigator.clipboard.writeText(address)
-      alert('Address copied!')
+      alert('✅ Address copied!')
     }
   }
+
+  const stats = [
+    { label: 'Collected', value: nfts.filter(n => n.owner_address === address?.toLowerCase()).length.toString() },
+    { label: 'Created', value: nfts.filter(n => n.creator_address === address?.toLowerCase()).length.toString() },
+    { label: 'Following', value: profile?.website_url ? '1' : '0' },
+    { label: 'Followers', value: profile?.twitter_handle ? '1' : '0' },
+  ]
 
   if (!isConnected) {
     return (
@@ -72,41 +204,192 @@ export default function ProfilePage() {
         {/* Profile Header */}
         <div className="glass-card glow-violet mb-8 overflow-hidden rounded-3xl border border-white/10">
           {/* Cover Image */}
-          <div className="h-48 bg-gradient-to-r from-violet-600 via-purple-600 to-cyan-600" />
+          <div className="relative h-48 bg-gradient-to-r from-violet-600 via-purple-600 to-cyan-600">
+            {bannerPreview && (
+              <img 
+                src={bannerPreview} 
+                alt="Banner" 
+                className="h-full w-full object-cover"
+              />
+            )}
+            {isEditing && (
+              <label className="absolute right-4 top-4 cursor-pointer rounded-lg bg-black/50 p-2 backdrop-blur-sm transition hover:bg-black/70">
+                <Upload className="h-5 w-5 text-white" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBannerUpload}
+                />
+              </label>
+            )}
+          </div>
           
           <div className="relative px-6 pb-6">
             {/* Avatar */}
             <div className="absolute -top-16 left-6">
-              <div className="h-32 w-32 rounded-full border-4 border-gray-900 bg-gradient-to-br from-violet-400 to-purple-400 p-1">
-                <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-900 text-4xl font-bold text-white">
-                  {address?.slice(2, 4).toUpperCase()}
-                </div>
+              <div className="relative h-32 w-32 rounded-full border-4 border-gray-900 bg-gradient-to-br from-violet-400 to-purple-400 p-1">
+                {avatarPreview ? (
+                  <img 
+                    src={avatarPreview} 
+                    alt="Avatar" 
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-900 text-4xl font-bold text-white">
+                    {address?.slice(2, 4).toUpperCase()}
+                  </div>
+                )}
+                {isEditing && (
+                  <label className="absolute bottom-0 right-0 cursor-pointer rounded-full bg-violet-600 p-2 transition hover:bg-violet-500">
+                    <Upload className="h-4 w-4 text-white" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                    />
+                  </label>
+                )}
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <button className="glass-card rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10">
-                <Share2 className="h-4 w-4" />
-              </button>
-              <button className="glass-card rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10">
-                <Settings className="h-4 w-4" />
-              </button>
+              {isEditing ? (
+                <>
+                  <button 
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    className="glass-card flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-50"
+                  >
+                    <X className="h-4 w-4" />
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:from-violet-500 hover:to-purple-500 disabled:opacity-50"
+                  >
+                    <Save className="h-4 w-4" />
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="glass-card rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10">
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    className="glass-card flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    Edit Profile
+                  </button>
+                </>
+              )}
             </div>
 
             <div className="mt-4">
-              <h1 className="text-3xl font-bold text-white">
-                {address?.slice(0, 6)}...{address?.slice(-4)}
-              </h1>
-              <button
-                onClick={copyAddress}
-                className="mt-2 flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
-              >
-                {address}
-                <Copy className="h-4 w-4" />
-              </button>
-              <p className="mt-4 max-w-2xl text-slate-400">
-                Digital artist and NFT collector on Arc Layer 1. Exploring the intersection of art and blockchain technology.
-              </p>
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-400">Username</label>
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      placeholder="Enter your username"
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-400">Bio</label>
+                    <textarea
+                      value={formData.bio}
+                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      placeholder="Tell us about yourself"
+                      rows={3}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-400">Twitter</label>
+                      <input
+                        type="text"
+                        value={formData.twitter_handle}
+                        onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
+                        placeholder="@username"
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-400">Discord</label>
+                      <input
+                        type="text"
+                        value={formData.discord_handle}
+                        onChange={(e) => setFormData({ ...formData, discord_handle: e.target.value })}
+                        placeholder="username#1234"
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-400">Website</label>
+                      <input
+                        type="url"
+                        value={formData.website_url}
+                        onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                        placeholder="https://..."
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-3xl font-bold text-white">
+                    {profile?.username || `${address?.slice(0, 6)}...${address?.slice(-4)}`}
+                  </h1>
+                  <button
+                    onClick={copyAddress}
+                    className="mt-2 flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+                  >
+                    {address}
+                    <Copy className="h-4 w-4" />
+                  </button>
+                  <p className="mt-4 max-w-2xl text-slate-400">
+                    {profile?.bio || 'Digital artist and NFT collector on Arc Layer 1.'}
+                  </p>
+                  {(profile?.twitter_handle || profile?.discord_handle || profile?.website_url) && (
+                    <div className="mt-4 flex gap-3">
+                      {profile.twitter_handle && (
+                        <a
+                          href={`https://twitter.com/${profile.twitter_handle.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-400 transition hover:text-violet-400"
+                        >
+                          Twitter
+                        </a>
+                      )}
+                      {profile.discord_handle && (
+                        <span className="text-slate-400">Discord: {profile.discord_handle}</span>
+                      )}
+                      {profile.website_url && (
+                        <a
+                          href={profile.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-slate-400 transition hover:text-violet-400"
+                        >
+                          Website <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Stats */}
@@ -139,18 +422,28 @@ export default function ProfilePage() {
         </div>
 
         {/* NFT Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {mockNFTs.map((nft) => (
-            <NFTCard key={nft.id} {...nft} />
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {mockNFTs.length === 0 && (
-          <div className="flex min-h-[400px] items-center justify-center rounded-lg border border-gray-800 bg-gray-900/50">
+        {isLoading ? (
+          <div className="flex min-h-[400px] items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+          </div>
+        ) : nfts.length > 0 ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {nfts.map((nft) => (
+              <NFTCard 
+                key={nft.id} 
+                id={nft.token_id.toString()}
+                name={nft.name}
+                image={nft.image_url}
+                price={nft.price || '0'}
+                creator={nft.creator_address}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex min-h-[400px] items-center justify-center rounded-lg border border-white/10 bg-white/5">
             <div className="text-center">
               <h3 className="text-xl font-semibold text-white">No NFTs Yet</h3>
-              <p className="mt-2 text-gray-400">
+              <p className="mt-2 text-slate-400">
                 {activeTab === 'collected'
                   ? 'Start collecting NFTs from the marketplace'
                   : activeTab === 'created'

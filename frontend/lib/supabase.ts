@@ -8,10 +8,31 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Check .env.local file.');
 }
 
-// Create Supabase client
+// Create Supabase client with wallet authentication context
+export const createSupabaseClient = (walletAddress?: string) => {
+  const client = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false, // We use wallet authentication, not Supabase auth
+    },
+    global: {
+      headers: walletAddress 
+        ? { 'X-Wallet-Address': walletAddress.toLowerCase() }
+        : {},
+    },
+  });
+
+  // Set wallet address in session for RLS policies
+  if (walletAddress) {
+    client.rpc('set_wallet_context', { wallet: walletAddress.toLowerCase() });
+  }
+
+  return client;
+};
+
+// Default client without wallet context (for public queries)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: false, // We use wallet authentication, not Supabase auth
+    persistSession: false,
   },
 });
 
@@ -112,8 +133,13 @@ export async function getProfile(walletAddress: string): Promise<Profile | null>
   return data;
 }
 
-export async function upsertProfile(profile: Partial<Profile> & { wallet_address: string }): Promise<Profile | null> {
-  const { data, error } = await supabase
+export async function upsertProfile(
+  profile: Partial<Profile> & { wallet_address: string }
+): Promise<Profile | null> {
+  // Create client with wallet context for RLS
+  const client = createSupabaseClient(profile.wallet_address);
+
+  const { data, error } = await client
     .from('profiles')
     .upsert({
       ...profile,
@@ -257,7 +283,9 @@ export async function getFavorites(userAddress: string): Promise<(Favorite & { n
 }
 
 export async function addFavorite(userAddress: string, nftId: string): Promise<boolean> {
-  const { error } = await supabase
+  const client = createSupabaseClient(userAddress);
+  
+  const { error } = await client
     .from('favorites')
     .insert({
       user_address: userAddress.toLowerCase(),
@@ -273,7 +301,9 @@ export async function addFavorite(userAddress: string, nftId: string): Promise<b
 }
 
 export async function removeFavorite(userAddress: string, nftId: string): Promise<boolean> {
-  const { error } = await supabase
+  const client = createSupabaseClient(userAddress);
+  
+  const { error } = await client
     .from('favorites')
     .delete()
     .eq('user_address', userAddress.toLowerCase())
