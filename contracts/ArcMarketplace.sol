@@ -8,13 +8,15 @@ import "./ArcNFT.sol";
 
 /**
  * @title ArcMarketplace
- * @dev Complete NFT Marketplace for Arc Layer 1
- * Features: Listings, Buy/Sell, Offers, Auctions, Automatic royalties
+ * @dev NFT Marketplace with listings, offers, and auctions
+ * Supports automatic royalty payments to creators
+ * @author Built for Arc Layer 1
  */
 contract ArcMarketplace is ReentrancyGuard, Ownable {
     
-    // Marketplace fee (2.5%)
-    uint256 public platformFee = 250; // basis points (250 = 2.5%)
+    // Platform fee in basis points (250 = 2.5%)
+    uint256 public platformFee = 250;
+    uint256 public constant MAX_PLATFORM_FEE = 1000; // 10% max
     
     struct Listing {
         address seller;
@@ -121,6 +123,7 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     
     /**
      * @dev List an NFT for sale
+     * Seller must approve marketplace first
      */
     function listItem(
         address nftAddress,
@@ -128,6 +131,7 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
         uint256 price
     ) public nonReentrant {
         require(price > 0, "Price must be greater than 0");
+        require(nftAddress != address(0), "Invalid NFT address");
         
         IERC721 nft = IERC721(nftAddress);
         require(nft.ownerOf(tokenId) == msg.sender, "Not the owner");
@@ -136,6 +140,11 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
             nft.getApproved(tokenId) == address(this),
             "Marketplace not approved"
         );
+        
+        // cancel any existing listing for this token
+        if (listings[nftAddress][tokenId].active) {
+            listings[nftAddress][tokenId].active = false;
+        }
         
         listings[nftAddress][tokenId] = Listing({
             seller: msg.sender,
@@ -148,6 +157,7 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     
     /**
      * @dev Buy a listed NFT
+     * Handles royalties and platform fees automatically
      */
     function buyItem(address nftAddress, uint256 tokenId) 
         public 
@@ -157,23 +167,27 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
         Listing memory listing = listings[nftAddress][tokenId];
         require(listing.active, "Item not listed");
         require(msg.value >= listing.price, "Insufficient payment");
+        require(msg.sender != listing.seller, "Cannot buy your own NFT");
         
+        // mark as inactive before transfers (reentrancy protection)
         listings[nftAddress][tokenId].active = false;
         
-        // Calculate and distribute payments
+        // distribute payments (royalties + fees)
         _distributeFunds(nftAddress, tokenId, listing.seller, listing.price);
         
-        // Transfer NFT
+        // transfer the NFT
         IERC721(nftAddress).safeTransferFrom(listing.seller, msg.sender, tokenId);
         
+        // update stats
         totalSales++;
         totalVolume += listing.price;
         
         emit ItemSold(nftAddress, tokenId, listing.seller, msg.sender, listing.price);
         
-        // Return excess payment
+        // refund any excess payment
         if (msg.value > listing.price) {
-            payable(msg.sender).transfer(msg.value - listing.price);
+            (bool success, ) = payable(msg.sender).call{value: msg.value - listing.price}("");
+            require(success, "Refund failed");
         }
     }
     
@@ -191,7 +205,8 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     }
     
     /**
-     * @dev Make an offer on an NFT
+     * @dev Make an offer on any NFT (even if not listed)
+     * ETH is held in escrow until offer expires or is accepted
      */
     function makeOffer(
         address nftAddress,
@@ -200,12 +215,14 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     ) public payable nonReentrant {
         require(msg.value > 0, "Offer must be greater than 0");
         require(duration >= 1 hours && duration <= 30 days, "Invalid duration");
+        require(nftAddress != address(0), "Invalid NFT address");
         
-        // Cancel previous offer if exists
+        // if user already has an active offer, refund it first
         Offer storage existingOffer = offers[nftAddress][tokenId][msg.sender];
         if (existingOffer.active) {
             existingOffer.active = false;
-            payable(msg.sender).transfer(existingOffer.price);
+            (bool success, ) = payable(msg.sender).call{value: existingOffer.price}("");
+            require(success, "Refund failed");
         }
         
         uint256 expiresAt = block.timestamp + duration;
@@ -221,7 +238,8 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     }
     
     /**
-     * @dev Accept an offer
+     * @dev Accept an offer for your NFT
+     * Buyer's ETH is released from escrow
      */
     function acceptOffer(
         address nftAddress,
@@ -230,20 +248,23 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     ) public nonReentrant {
         IERC721 nft = IERC721(nftAddress);
         require(nft.ownerOf(tokenId) == msg.sender, "Not the owner");
+        require(buyer != address(0), "Invalid buyer address");
+        require(buyer != msg.sender, "Cannot accept your own offer");
         
         Offer memory offer = offers[nftAddress][tokenId][buyer];
         require(offer.active, "Offer not active");
         require(block.timestamp <= offer.expiresAt, "Offer expired");
         
+        // mark offer as inactive before transfers
         offers[nftAddress][tokenId][buyer].active = false;
         
-        // Distribute payments
+        // distribute payment
         _distributeFunds(nftAddress, tokenId, msg.sender, offer.price);
         
-        // Transfer NFT
+        // transfer NFT to buyer
         nft.safeTransferFrom(msg.sender, buyer, tokenId);
         
-        // Cancel listing if exists
+        // cancel active listing if exists
         if (listings[nftAddress][tokenId].active) {
             listings[nftAddress][tokenId].active = false;
         }
@@ -255,20 +276,24 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     }
     
     /**
-     * @dev Cancel an offer
+     * @dev Cancel your offer and get refund
      */
     function cancelOffer(address nftAddress, uint256 tokenId) public nonReentrant {
         Offer memory offer = offers[nftAddress][tokenId][msg.sender];
         require(offer.active, "No active offer");
         
         offers[nftAddress][tokenId][msg.sender].active = false;
-        payable(msg.sender).transfer(offer.price);
+        
+        // refund the escrowed ETH
+        (bool success, ) = payable(msg.sender).call{value: offer.price}("");
+        require(success, "Refund failed");
         
         emit OfferCancelled(nftAddress, tokenId, msg.sender);
     }
     
     /**
-     * @dev Create an auction
+     * @dev Start an auction for your NFT
+     * Min 1 hour, max 7 days duration
      */
     function createAuction(
         address nftAddress,
@@ -278,6 +303,7 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     ) public nonReentrant {
         require(startPrice > 0, "Start price must be greater than 0");
         require(duration >= 1 hours && duration <= 7 days, "Invalid duration");
+        require(nftAddress != address(0), "Invalid NFT address");
         
         IERC721 nft = IERC721(nftAddress);
         require(nft.ownerOf(tokenId) == msg.sender, "Not the owner");
@@ -286,6 +312,9 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
             nft.getApproved(tokenId) == address(this),
             "Marketplace not approved"
         );
+        
+        // make sure there's no active auction already
+        require(!auctions[nftAddress][tokenId].active, "Auction already active");
         
         uint256 endTime = block.timestamp + duration;
         
@@ -302,7 +331,8 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     }
     
     /**
-     * @dev Place a bid on auction
+     * @dev Place a bid on an active auction
+     * Previous highest bidder gets refunded automatically
      */
     function placeBid(address nftAddress, uint256 tokenId) 
         public 
@@ -312,14 +342,17 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
         Auction storage auction = auctions[nftAddress][tokenId];
         require(auction.active, "Auction not active");
         require(block.timestamp < auction.endTime, "Auction ended");
+        require(msg.sender != auction.seller, "Cannot bid on your own auction");
         require(msg.value >= auction.startPrice, "Bid below start price");
         require(msg.value > auction.highestBid, "Bid not high enough");
         
-        // Return previous bid
+        // refund previous highest bidder
         if (auction.highestBidder != address(0)) {
-            payable(auction.highestBidder).transfer(auction.highestBid);
+            (bool success, ) = payable(auction.highestBidder).call{value: auction.highestBid}("");
+            require(success, "Refund to previous bidder failed");
         }
         
+        // update auction with new highest bid
         auction.highestBid = msg.value;
         auction.highestBidder = msg.sender;
         
@@ -327,17 +360,19 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     }
     
     /**
-     * @dev End an auction
+     * @dev End an auction after time expires
+     * Anyone can call this, but only after endTime
      */
     function endAuction(address nftAddress, uint256 tokenId) public nonReentrant {
         Auction storage auction = auctions[nftAddress][tokenId];
         require(auction.active, "Auction not active");
-        require(block.timestamp >= auction.endTime, "Auction not ended");
+        require(block.timestamp >= auction.endTime, "Auction not ended yet");
         
         auction.active = false;
         
+        // if there were bids, complete the sale
         if (auction.highestBidder != address(0)) {
-            // Distribute payments
+            // distribute funds (royalties + fees)
             _distributeFunds(
                 nftAddress,
                 tokenId,
@@ -345,7 +380,7 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
                 auction.highestBid
             );
             
-            // Transfer NFT
+            // transfer NFT to winner
             IERC721(nftAddress).safeTransferFrom(
                 auction.seller,
                 auction.highestBidder,
@@ -357,12 +392,14 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
             
             emit AuctionEnded(nftAddress, tokenId, auction.highestBidder, auction.highestBid);
         } else {
+            // no bids, auction failed
             emit AuctionEnded(nftAddress, tokenId, address(0), 0);
         }
     }
     
     /**
-     * @dev Distribute payments (royalties + platform fee)
+     * @dev Internal function to handle payment distribution
+     * Pays royalties to creator, platform fee to owner, rest to seller
      */
     function _distributeFunds(
         address nftAddress,
@@ -372,33 +409,40 @@ contract ArcMarketplace is ReentrancyGuard, Ownable {
     ) private {
         uint256 remaining = price;
         
-        // Try to pay royalties (if ArcNFT)
+        // try to pay royalties if NFT supports it
         try ArcNFT(nftAddress).calculateRoyalty(tokenId, price) returns (
             address creator,
             uint256 royaltyAmount
         ) {
+            // only pay royalty if creator is different from seller and amount > 0
             if (creator != address(0) && creator != seller && royaltyAmount > 0) {
-                payable(creator).transfer(royaltyAmount);
+                (bool success, ) = payable(creator).call{value: royaltyAmount}("");
+                require(success, "Royalty payment failed");
                 remaining -= royaltyAmount;
             }
         } catch {
-            // NFT doesn't support royalties, continue
+            // NFT doesnt support royalties, skip
         }
         
-        // Platform fee
+        // calculate and pay platform fee
         uint256 fee = (price * platformFee) / 10000;
-        payable(owner()).transfer(fee);
-        remaining -= fee;
+        if (fee > 0) {
+            (bool success, ) = payable(owner()).call{value: fee}("");
+            require(success, "Fee payment failed");
+            remaining -= fee;
+        }
         
-        // Seller receives the rest
-        payable(seller).transfer(remaining);
+        // rest goes to seller
+        (bool success, ) = payable(seller).call{value: remaining}("");
+        require(success, "Seller payment failed");
     }
     
     /**
-     * @dev Update platform fee (owner only)
+     * @dev Update platform fee - only owner
+     * Max 10% to prevent abuse
      */
     function setPlatformFee(uint256 newFee) public onlyOwner {
-        require(newFee <= 1000, "Fee too high"); // Maximum 10%
+        require(newFee <= MAX_PLATFORM_FEE, "Fee too high"); 
         platformFee = newFee;
     }
     
