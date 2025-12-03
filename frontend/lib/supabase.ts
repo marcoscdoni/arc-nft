@@ -1,0 +1,359 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase configuration from environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Check .env.local file.');
+}
+
+// Create Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false, // We use wallet authentication, not Supabase auth
+  },
+});
+
+// Database types
+export interface Profile {
+  id: string;
+  wallet_address: string;
+  username?: string;
+  bio?: string;
+  avatar_url?: string;
+  banner_url?: string;
+  twitter_handle?: string;
+  discord_handle?: string;
+  website_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NFT {
+  id: string;
+  token_id: number;
+  contract_address: string;
+  owner_address: string;
+  creator_address: string;
+  name: string;
+  description?: string;
+  image_url: string;
+  metadata_url: string;
+  metadata_json?: any;
+  royalty_percentage?: number;
+  created_at: string;
+  updated_at: string;
+  minted_at?: string;
+  last_transfer_at?: string;
+}
+
+export interface Listing {
+  id: string;
+  listing_id: number;
+  nft_id: string;
+  seller_address: string;
+  price: string;
+  token_address: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  sold_at?: string;
+  cancelled_at?: string;
+}
+
+export interface Sale {
+  id: string;
+  nft_id?: string;
+  listing_id: number;
+  seller_address: string;
+  buyer_address: string;
+  price: string;
+  token_address: string;
+  transaction_hash: string;
+  sold_at: string;
+}
+
+export interface Favorite {
+  id: string;
+  user_address: string;
+  nft_id: string;
+  created_at: string;
+}
+
+export interface Collection {
+  id: string;
+  contract_address: string;
+  name: string;
+  symbol?: string;
+  description?: string;
+  banner_url?: string;
+  avatar_url?: string;
+  total_supply: number;
+  total_volume: string;
+  floor_price?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// API functions for profiles
+export async function getProfile(walletAddress: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('wallet_address', walletAddress.toLowerCase())
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching profile:', error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function upsertProfile(profile: Partial<Profile> & { wallet_address: string }): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert({
+      ...profile,
+      wallet_address: profile.wallet_address.toLowerCase(),
+    }, {
+      onConflict: 'wallet_address',
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error upserting profile:', error);
+    return null;
+  }
+
+  return data;
+}
+
+// API functions for NFTs
+export async function getNFTs(filters?: {
+  owner?: string;
+  creator?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<NFT[]> {
+  let query = supabase
+    .from('nfts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (filters?.owner) {
+    query = query.eq('owner_address', filters.owner.toLowerCase());
+  }
+
+  if (filters?.creator) {
+    query = query.eq('creator_address', filters.creator.toLowerCase());
+  }
+
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  if (filters?.offset) {
+    query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching NFTs:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function getNFTById(id: string): Promise<NFT | null> {
+  const { data, error } = await supabase
+    .from('nfts')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching NFT:', error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function getNFTByTokenId(contractAddress: string, tokenId: number): Promise<NFT | null> {
+  const { data, error } = await supabase
+    .from('nfts')
+    .select('*')
+    .eq('contract_address', contractAddress.toLowerCase())
+    .eq('token_id', tokenId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching NFT by token ID:', error);
+    return null;
+  }
+
+  return data;
+}
+
+// API functions for listings
+export async function getActiveListings(filters?: {
+  limit?: number;
+  offset?: number;
+  minPrice?: string;
+  maxPrice?: string;
+}): Promise<(Listing & { nft: NFT })[]> {
+  let query = supabase
+    .from('listings')
+    .select('*, nft:nfts(*)')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (filters?.minPrice) {
+    query = query.gte('price', filters.minPrice);
+  }
+
+  if (filters?.maxPrice) {
+    query = query.lte('price', filters.maxPrice);
+  }
+
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  if (filters?.offset) {
+    query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching listings:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// API functions for favorites
+export async function getFavorites(userAddress: string): Promise<(Favorite & { nft: NFT })[]> {
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('*, nft:nfts(*)')
+    .eq('user_address', userAddress.toLowerCase())
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching favorites:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function addFavorite(userAddress: string, nftId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('favorites')
+    .insert({
+      user_address: userAddress.toLowerCase(),
+      nft_id: nftId,
+    });
+
+  if (error) {
+    console.error('Error adding favorite:', error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function removeFavorite(userAddress: string, nftId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('favorites')
+    .delete()
+    .eq('user_address', userAddress.toLowerCase())
+    .eq('nft_id', nftId);
+
+  if (error) {
+    console.error('Error removing favorite:', error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function isFavorite(userAddress: string, nftId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('id')
+    .eq('user_address', userAddress.toLowerCase())
+    .eq('nft_id', nftId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error checking favorite:', error);
+    return false;
+  }
+
+  return !!data;
+}
+
+// API functions for sales history
+export async function getSalesHistory(filters?: {
+  nftId?: string;
+  buyer?: string;
+  seller?: string;
+  limit?: number;
+}): Promise<Sale[]> {
+  let query = supabase
+    .from('sales')
+    .select('*')
+    .order('sold_at', { ascending: false });
+
+  if (filters?.nftId) {
+    query = query.eq('nft_id', filters.nftId);
+  }
+
+  if (filters?.buyer) {
+    query = query.eq('buyer_address', filters.buyer.toLowerCase());
+  }
+
+  if (filters?.seller) {
+    query = query.eq('seller_address', filters.seller.toLowerCase());
+  }
+
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching sales history:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// Search function
+export async function searchNFTs(searchTerm: string, limit = 20): Promise<NFT[]> {
+  const { data, error } = await supabase
+    .from('nfts')
+    .select('*')
+    .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error searching NFTs:', error);
+    return [];
+  }
+
+  return data || [];
+}
