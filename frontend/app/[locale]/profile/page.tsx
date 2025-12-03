@@ -111,13 +111,20 @@ export default function ProfilePage() {
   const handleSaveProfile = async () => {
     if (!address) return
     
-    // Require authentication before saving
+    // CRITICAL: Require authentication AND verify wallet matches profile
     if (!isAuthenticated) {
-      const signature = await signAuth();
+      // Verify that connected wallet matches the profile being edited
+      const signature = await signAuth(address);
       if (!signature) {
         alert('❌ Authentication required. Please sign the message to verify your wallet.');
         return;
       }
+    }
+    
+    // Double-check: connected wallet must match profile wallet
+    if (address.toLowerCase() !== address.toLowerCase()) {
+      alert('❌ You can only edit your own profile!');
+      return;
     }
     
     setIsSaving(true)
@@ -135,7 +142,7 @@ export default function ProfilePage() {
         bannerUrl = await uploadImage(bannerFile)
       }
       
-      // Save profile to Supabase
+      // Save profile to Supabase with wallet validation
       const updatedProfile = await upsertProfile({
         wallet_address: address,
         username: formData.username || undefined,
@@ -145,7 +152,7 @@ export default function ProfilePage() {
         twitter_handle: formData.twitter_handle || undefined,
         discord_handle: formData.discord_handle || undefined,
         website_url: formData.website_url || undefined,
-      })
+      }, address) // Pass authenticated wallet for validation
       
       if (updatedProfile) {
         setProfile(updatedProfile)

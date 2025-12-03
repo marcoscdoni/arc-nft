@@ -38,10 +38,19 @@ export function useWalletAuth(): UseWalletAuthReturn {
   /**
    * Request wallet signature to authenticate user
    * Message includes timestamp to prevent replay attacks
+   * 
+   * @param expectedAddress - Optional: validate that signing wallet matches expected address
    */
-  const signAuth = useCallback(async (): Promise<string | null> => {
+  const signAuth = useCallback(async (expectedAddress?: string): Promise<string | null> => {
     if (!address) {
       setAuthError('No wallet connected');
+      return null;
+    }
+
+    // CRITICAL: Verify that connected wallet matches expected wallet
+    if (expectedAddress && address.toLowerCase() !== expectedAddress.toLowerCase()) {
+      setAuthError(`Wrong wallet connected. Expected: ${expectedAddress}, but got: ${address}`);
+      console.error('Wallet mismatch:', { expected: expectedAddress, actual: address });
       return null;
     }
 
@@ -67,7 +76,7 @@ This signature will not trigger any blockchain transaction or cost gas fees.`;
 
       const signature = await signMessageAsync({ message });
 
-      // Cache the signature
+      // Cache the signature (scoped to this wallet address)
       authCache.set(address.toLowerCase(), { signature, timestamp });
       setLastAuthTime(timestamp);
 
