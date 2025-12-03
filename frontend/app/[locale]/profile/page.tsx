@@ -9,6 +9,8 @@ import { NFTCard } from '@/components/nft-card'
 import { getProfile, upsertProfile, getNFTs, type Profile } from '@/lib/supabase'
 import { uploadImage } from '@/lib/nft-storage'
 import { useWalletAuth } from '@/hooks/use-wallet-auth'
+import { toast } from 'sonner'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 
 export default function ProfilePage() {
   const { address, isConnected } = useAccount()
@@ -19,6 +21,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
   
   // Form state
   const [formData, setFormData] = useState({
@@ -114,35 +117,40 @@ export default function ProfilePage() {
     // CRITICAL: Require authentication AND verify wallet matches profile
     if (!isAuthenticated) {
       // Verify that connected wallet matches the profile being edited
-      const signature = await signAuth(address);
+      const signature = await signAuth();
       if (!signature) {
-        alert('❌ Authentication required. Please sign the message to verify your wallet.');
+        toast.error('Authentication required. Please sign the message to verify your wallet.');
         return;
       }
     }
     
     // Double-check: connected wallet must match profile wallet
     if (address.toLowerCase() !== address.toLowerCase()) {
-      alert('❌ You can only edit your own profile!');
+      toast.error('You can only edit your own profile!');
       return;
     }
     
     setIsSaving(true)
+    const uploadToast = toast.loading('Saving profile...')
+    
     try {
       let avatarUrl = profile?.avatar_url || ''
       let bannerUrl = profile?.banner_url || ''
       
       // Upload avatar if changed
       if (avatarFile) {
+        toast.loading('Uploading avatar to IPFS...', { id: uploadToast })
         avatarUrl = await uploadImage(avatarFile)
       }
       
       // Upload banner if changed
       if (bannerFile) {
+        toast.loading('Uploading banner to IPFS...', { id: uploadToast })
         bannerUrl = await uploadImage(bannerFile)
       }
       
       // Save profile to Supabase with wallet validation
+      toast.loading('Saving to database...', { id: uploadToast })
       const updatedProfile = await upsertProfile({
         wallet_address: address,
         username: formData.username || undefined,
@@ -159,20 +167,40 @@ export default function ProfilePage() {
         setIsEditing(false)
         setAvatarFile(null)
         setBannerFile(null)
-        alert('✅ Profile updated successfully!')
+        toast.success('Profile updated successfully!', { id: uploadToast })
       } else {
-        alert('❌ Failed to update profile')
+        toast.error('Failed to update profile', { id: uploadToast })
       }
     } catch (error) {
       console.error('Error saving profile:', error)
-      alert('❌ Error saving profile')
+      toast.error('Error saving profile: ' + (error as Error).message, { id: uploadToast })
     } finally {
       setIsSaving(false)
     }
   }
 
   const handleCancelEdit = () => {
+    const hasChanges = 
+      avatarFile !== null || 
+      bannerFile !== null ||
+      formData.username !== (profile?.username || '') ||
+      formData.bio !== (profile?.bio || '') ||
+      formData.twitter_handle !== (profile?.twitter_handle || '') ||
+      formData.discord_handle !== (profile?.discord_handle || '') ||
+      formData.website_url !== (profile?.website_url || '');
+
+    if (hasChanges) {
+      setShowCancelDialog(true);
+      return;
+    }
+
+    // No changes, just close edit mode
+    cancelEditMode();
+  }
+
+  const cancelEditMode = () => {
     setIsEditing(false)
+    setShowCancelDialog(false)
     setFormData({
       username: profile?.username || '',
       bio: profile?.bio || '',
@@ -189,7 +217,7 @@ export default function ProfilePage() {
   const copyAddress = () => {
     if (address) {
       navigator.clipboard.writeText(address)
-      alert('✅ Address copied!')
+      toast.success('Address copied to clipboard!')
     }
   }
 
@@ -485,6 +513,18 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Cancel Edit Dialog */}
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={cancelEditMode}
+        title="Discard Changes?"
+        description="You have unsaved changes. Are you sure you want to discard them?"
+        confirmText="Discard"
+        cancelText="Keep Editing"
+        variant="warning"
+      />
     </div>
   )
 }
