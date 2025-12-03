@@ -4,13 +4,15 @@
 
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { Copy, ExternalLink, Settings, Share2, Edit2, Save, X, Upload } from 'lucide-react'
+import { Copy, ExternalLink, Settings, Share2, Edit2, Save, X, Upload, Lock } from 'lucide-react'
 import { NFTCard } from '@/components/nft-card'
 import { getProfile, upsertProfile, getNFTs, type Profile } from '@/lib/supabase'
 import { uploadImage } from '@/lib/nft-storage'
+import { useWalletAuth } from '@/hooks/use-wallet-auth'
 
 export default function ProfilePage() {
   const { address, isConnected } = useAccount()
+  const { signAuth, isSigningAuth, authError, isAuthenticated } = useWalletAuth()
   const [activeTab, setActiveTab] = useState<'collected' | 'created' | 'listed'>('collected')
   const [profile, setProfile] = useState<Profile | null>(null)
   const [nfts, setNfts] = useState<any[]>([])
@@ -109,6 +111,15 @@ export default function ProfilePage() {
   const handleSaveProfile = async () => {
     if (!address) return
     
+    // Require authentication before saving
+    if (!isAuthenticated) {
+      const signature = await signAuth();
+      if (!signature) {
+        alert('❌ Authentication required. Please sign the message to verify your wallet.');
+        return;
+      }
+    }
+    
     setIsSaving(true)
     try {
       let avatarUrl = profile?.avatar_url || ''
@@ -127,13 +138,13 @@ export default function ProfilePage() {
       // Save profile to Supabase
       const updatedProfile = await upsertProfile({
         wallet_address: address,
-        username: formData.username || null,
-        bio: formData.bio || null,
-        avatar_url: avatarUrl || null,
-        banner_url: bannerUrl || null,
-        twitter_handle: formData.twitter_handle || null,
-        discord_handle: formData.discord_handle || null,
-        website_url: formData.website_url || null,
+        username: formData.username || undefined,
+        bio: formData.bio || undefined,
+        avatar_url: avatarUrl || undefined,
+        banner_url: bannerUrl || undefined,
+        twitter_handle: formData.twitter_handle || undefined,
+        discord_handle: formData.discord_handle || undefined,
+        website_url: formData.website_url || undefined,
       })
       
       if (updatedProfile) {
@@ -259,7 +270,7 @@ export default function ProfilePage() {
                 <>
                   <button 
                     onClick={handleCancelEdit}
-                    disabled={isSaving}
+                    disabled={isSaving || isSigningAuth}
                     className="glass-card flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-50"
                   >
                     <X className="h-4 w-4" />
@@ -267,11 +278,25 @@ export default function ProfilePage() {
                   </button>
                   <button 
                     onClick={handleSaveProfile}
-                    disabled={isSaving}
+                    disabled={isSaving || isSigningAuth}
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:from-violet-500 hover:to-purple-500 disabled:opacity-50"
                   >
-                    <Save className="h-4 w-4" />
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isSigningAuth ? (
+                      <>
+                        <Lock className="h-4 w-4" />
+                        Sign to Save...
+                      </>
+                    ) : isSaving ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Save
+                      </>
+                    )}
                   </button>
                 </>
               ) : (

@@ -9,11 +9,13 @@ import { useAccount } from 'wagmi'
 import { useNFTMint, useNFTApprove, useMarketplaceListing } from '@/hooks/use-nft-contract'
 import { uploadNFT, type UploadProgress } from '@/lib/nft-storage'
 import { useRouter } from '@/i18n/routing'
+import { useWalletAuth } from '@/hooks/use-wallet-auth'
 
 export default function CreatePage() {
   const t = useTranslations('create')
   const router = useRouter()
   const { address, isConnected } = useAccount()
+  const { signAuth, isSigningAuth, authError, isAuthenticated } = useWalletAuth()
   
   const [formData, setFormData] = useState({
     name: '',
@@ -57,6 +59,16 @@ export default function CreatePage() {
       setErrorMessage('Please select an image')
       setCurrentStep('error')
       return
+    }
+
+    // Require authentication before creating NFT
+    if (!isAuthenticated) {
+      const signature = await signAuth();
+      if (!signature) {
+        setErrorMessage('Authentication required. Please sign the message to verify your wallet.');
+        setCurrentStep('error');
+        return;
+      }
     }
 
     try {

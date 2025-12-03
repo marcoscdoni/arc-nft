@@ -8,10 +8,9 @@ interface NFTCardProps {
   name: string
   image: string
   price: bigint
-  owner: string
 }
 
-export function NFTCard({ id, name, image, price, owner }: NFTCardProps) {
+export function NFTCard({ id, name, image, price }: NFTCardProps) {
   const formattedPrice = formatUnits(price, 18)
 
   return (
