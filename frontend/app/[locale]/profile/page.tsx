@@ -459,8 +459,7 @@ export default function ProfilePage() {
                 id={nft.token_id.toString()}
                 name={nft.name}
                 image={nft.image_url}
-                price={nft.price || '0'}
-                creator={nft.creator_address}
+                price={BigInt(nft.price || '0')}
               />
             ))}
           </div>
