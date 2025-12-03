@@ -64,8 +64,10 @@ export async function uploadImage(
       onProgress({ loaded: file.size, total: file.size, percentage: 100 });
     }
 
-    // Return IPFS gateway URL
-    return `https://gateway.pinata.cloud/ipfs/${cid}`;
+    // CRITICAL FIX: Use dedicated gateway to avoid CORS/rate limit issues
+    // Free tier public gateway has 429 rate limits
+    const gatewayDomain = process.env.NEXT_PUBLIC_PINATA_GATEWAY_DOMAIN || 'gateway.pinata.cloud';
+    return `https://${gatewayDomain}/ipfs/${cid}`;
   } catch (error) {
     console.error('Error uploading image to IPFS:', error);
     throw new Error('Failed to upload image to IPFS');
@@ -112,8 +114,9 @@ export async function uploadMetadata(
       onProgress({ loaded: metadataBlob.size, total: metadataBlob.size, percentage: 100 });
     }
 
-    // Return IPFS gateway URL
-    return `https://gateway.pinata.cloud/ipfs/${cid}`;
+    // Use same gateway for consistency
+    const gatewayDomain = process.env.NEXT_PUBLIC_PINATA_GATEWAY_DOMAIN || 'gateway.pinata.cloud';
+    return `https://${gatewayDomain}/ipfs/${cid}`;
   } catch (error) {
     console.error('Error uploading metadata to IPFS:', error);
     throw new Error('Failed to upload metadata to IPFS');

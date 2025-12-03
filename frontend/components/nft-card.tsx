@@ -27,7 +27,6 @@ export function NFTCard({ id, name, image, price }: NFTCardProps) {
       </div>
       <div className="p-5">
         <h3 className="font-semibold text-white">{name}</h3>
-        <p className="mt-1 text-sm text-slate-400">{owner}</p>
         <div className="mt-4 flex items-center justify-between rounded-xl bg-white/5 px-3 py-2">
           <span className="text-xs font-medium text-slate-500">Price</span>
           <span className="font-semibold text-white">{formattedPrice} <span className="text-sm text-blue-400">USDC</span></span>

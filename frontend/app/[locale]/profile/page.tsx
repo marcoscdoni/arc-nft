@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
+import Image from 'next/image'
 import { Copy, ExternalLink, Settings, Share2, Edit2, Save, X, Upload, Lock } from 'lucide-react'
 import { NFTCard } from '@/components/nft-card'
 import { getProfile, upsertProfile, getNFTs, type Profile } from '@/lib/supabase'
@@ -255,11 +256,15 @@ export default function ProfilePage() {
           {/* Cover Image */}
           <div className="relative h-48 bg-gradient-to-r from-violet-600 via-purple-600 to-cyan-600">
             {bannerPreview && (
-              <img 
-                src={bannerPreview} 
-                alt="Banner" 
-                className="h-full w-full object-cover"
-              />
+              <div className="relative h-full w-full">
+                <Image 
+                  src={bannerPreview} 
+                  alt="Banner"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
             )}
             {isEditing && (
               <label className="absolute right-4 top-4 cursor-pointer rounded-lg bg-black/50 p-2 backdrop-blur-sm transition hover:bg-black/70">
@@ -279,11 +284,15 @@ export default function ProfilePage() {
             <div className="absolute -top-16 left-6">
               <div className="relative h-32 w-32 rounded-full border-4 border-gray-900 bg-gradient-to-br from-violet-400 to-purple-400 p-1">
                 {avatarPreview ? (
-                  <img 
-                    src={avatarPreview} 
-                    alt="Avatar" 
-                    className="h-full w-full rounded-full object-cover"
-                  />
+                  <div className="relative h-full w-full rounded-full overflow-hidden bg-gray-900">
+                    <Image 
+                      src={avatarPreview} 
+                      alt="Avatar"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-900 text-4xl font-bold text-white">
                     {address?.slice(2, 4).toUpperCase()}
