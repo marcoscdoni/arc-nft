@@ -1,0 +1,47 @@
+{
+  "navbar": {
+    "home": "Home",
+    "explore": "Explore",
+    "create": "Create",
+    "profile": "Profile"
+  },
+  "home": {
+    "hero": {
+      "title": "Discover, Collect, and Sell",
+      "subtitle": "Extraordinary NFTs",
+      "description": "The premier marketplace for digital assets on Arc Layer 1. Fast, secure, and with minimal fees.",
+      "explore": "Explore",
+      "create": "Create NFT"
+    },
+    "stats": {
+      "nfts": "NFTs",
+      "sales": "Sales",
+      "artists": "Artists",
+      "volume": "Volume"
+    },
+    "features": {
+      "title": "Why Choose ArcNFT",
+      "low_fees": {
+        "title": "Low Fees",
+        "description": "Enjoy minimal transaction costs on Arc Layer 1"
+      },
+      "fast": {
+        "title": "Lightning Fast",
+        "description": "Instant transactions and confirmations"
+      },
+      "secure": {
+        "title": "Secure",
+        "description": "Built on battle-tested smart contracts"
+      },
+      "royalties": {
+        "title": "Creator Royalties",
+        "description": "Automatic royalties on every secondary sale"
+      }
+    },
+    "cta": {
+      "title": "Ready to get started?",
+      "description": "Join thousands of creators and collectors on ArcNFT",
+      "button": "Start Creating"
+    }
+  }
+}

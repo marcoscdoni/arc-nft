@@ -1,0 +1,141 @@
+{
+  "navbar": {
+    "home": "Início",
+    "explore": "Explorar",
+    "create": "Criar",
+    "profile": "Perfil"
+  },
+  "home": {
+    "hero": {
+      "title": "Descubra, Colecione e Venda",
+      "subtitle": "NFTs Extraordinários",
+      "description": "O principal marketplace para ativos digitais na Arc Layer 1. Rápido, seguro e com taxas mínimas.",
+      "explore": "Explorar",
+      "create": "Criar NFT"
+    },
+    "stats": {
+      "nfts": "NFTs",
+      "sales": "Vendas",
+      "artists": "Artistas",
+      "volume": "Volume"
+    },
+    "features": {
+      "title": "Por que Escolher ArcNFT",
+      "low_fees": {
+        "title": "Taxas Baixas",
+        "description": "Aproveite custos mínimos de transação na Arc Layer 1"
+      },
+      "fast": {
+        "title": "Super Rápido",
+        "description": "Transações e confirmações instantâneas"
+      },
+      "secure": {
+        "title": "Seguro",
+        "description": "Construído sobre contratos inteligentes testados em batalha"
+      },
+      "royalties": {
+        "title": "Royalties do Criador",
+        "description": "Royalties automáticos em cada venda secundária"
+      }
+    },
+    "cta": {
+      "title": "Pronto para começar?",
+      "description": "Junte-se a milhares de criadores e colecionadores no ArcNFT",
+      "button": "Começar a Criar"
+    }
+  },
+  "explore": {
+    "title": "Explorar NFTs",
+    "description": "Descubra ativos digitais únicos na Arc Layer 1",
+    "search": "Buscar NFTs por nome...",
+    "sortBy": "Ordenar por:",
+    "categories": {
+      "all": "Todos os Itens",
+      "art": "Arte",
+      "photography": "Fotografia",
+      "gaming": "Jogos",
+      "3d": "Modelos 3D"
+    },
+    "sort": {
+      "recent": "Adicionados Recentemente",
+      "priceLow": "Preço: Menor para Maior",
+      "priceHigh": "Preço: Maior para Menor",
+      "trending": "Em Alta"
+    },
+    "results": {
+      "found": "itens encontrados",
+      "noResults": "Nenhum NFT Encontrado",
+      "tryAdjusting": "Tente ajustar sua busca ou filtros"
+    }
+  },
+  "create": {
+    "title": "Criar NFT",
+    "description": "Cunhe sua arte digital na Arc Layer 1",
+    "upload": {
+      "title": "Enviar Arquivo",
+      "clickUpload": "Clique para enviar ou arraste e solte",
+      "fileTypes": "PNG, JPG, GIF até 10MB",
+      "changeImage": "Alterar Imagem"
+    },
+    "form": {
+      "name": "Nome",
+      "namePlaceholder": "ex: 'Sonhos Abstratos #1'",
+      "price": "Preço (USDC)",
+      "pricePlaceholder": "0.00",
+      "priceHelp": "Deixe vazio para cunhar sem listar",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Conte sobre seu NFT...",
+      "royalty": "Royalty (%)",
+      "royaltyHelp": "Ganhe essa porcentagem em cada venda secundária (máx 10%)"
+    },
+    "info": {
+      "title": "Cunhagem Gratuita Disponível!",
+      "description": "Seus primeiros 5 NFTs são completamente gratuitos para cunhar. Depois disso, uma pequena taxa se aplica."
+    },
+    "button": {
+      "create": "Criar NFT",
+      "minting": "Cunhando..."
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "description": "Gerencie sua coleção de NFTs e perfil",
+    "connectWallet": "Conecte Sua Carteira",
+    "connectWalletDescription": "Por favor, conecte sua carteira para visualizar seu perfil",
+    "tabs": {
+      "collected": "Coletados",
+      "created": "Criados",
+      "listed": "Listados"
+    },
+    "stats": {
+      "collected": "Coletados",
+      "created": "Criados",
+      "totalValue": "Valor Total",
+      "floorPrice": "Preço Base"
+    },
+    "empty": {
+      "noNFTs": "Ainda Sem NFTs",
+      "collected": "Comece a colecionar NFTs do marketplace",
+      "created": "Crie seu primeiro NFT para começar",
+      "listed": "Liste seus NFTs para venda"
+    }
+  },
+  "nft": {
+    "currentPrice": "Preço Atual",
+    "buyNow": "Comprar Agora",
+    "updateListing": "Atualizar Listagem",
+    "cancelListing": "Cancelar Listagem",
+    "description": "Descrição",
+    "details": "Detalhes",
+    "activity": "Atividade",
+    "ownedBy": "Pertence a",
+    "createdBy": "Criado por",
+    "you": "Você",
+    "completePurchase": "Completar Compra",
+    "price": "Preço",
+    "creatorRoyalty": "Royalty do Criador",
+    "total": "Total",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
+  }
+}

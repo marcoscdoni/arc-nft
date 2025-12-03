@@ -1,0 +1,142 @@
+{
+  "navbar": {
+    "home": "Home",
+    "explore": "Explore",
+    "create": "Create",
+    "profile": "Profile"
+  },
+  "home": {
+    "hero": {
+      "title": "Discover, Collect, and Sell",
+      "subtitle": "Extraordinary NFTs",
+      "description": "The premier marketplace for digital assets on Arc Layer 1. Fast, secure, and with minimal fees.",
+      "explore": "Explore",
+      "create": "Create NFT"
+    },
+    "stats": {
+      "nfts": "NFTs",
+      "sales": "Sales",
+      "artists": "Artists",
+      "volume": "Volume"
+    },
+    "features": {
+      "title": "Why Choose ArcNFT",
+      "low_fees": {
+        "title": "Low Fees",
+        "description": "Enjoy minimal transaction costs on Arc Layer 1"
+      },
+      "fast": {
+        "title": "Lightning Fast",
+        "description": "Instant transactions and confirmations"
+      },
+      "secure": {
+        "title": "Secure",
+        "description": "Built on battle-tested smart contracts"
+      },
+      "royalties": {
+        "title": "Creator Royalties",
+        "description": "Automatic royalties on every secondary sale"
+      }
+    },
+    "cta": {
+      "title": "Ready to get started?",
+      "description": "Join thousands of creators and collectors on ArcNFT",
+      "button": "Start Creating"
+    }
+  },
+  "explore": {
+    "title": "Explore NFTs",
+    "description": "Discover unique digital assets on Arc Layer 1",
+    "search": "Search NFTs by name...",
+    "sortBy": "Sort by:",
+    "categories": {
+      "all": "All Items",
+      "art": "Art",
+      "photography": "Photography",
+      "gaming": "Gaming",
+      "3d": "3D Models"
+    },
+    "sort": {
+      "recent": "Recently Added",
+      "priceLow": "Price: Low to High",
+      "priceHigh": "Price: High to Low",
+      "trending": "Trending"
+    },
+    "results": {
+      "found": "items found",
+      "noResults": "No NFTs Found",
+      "tryAdjusting": "Try adjusting your search or filters"
+    }
+  },
+  "create": {
+    "title": "Create NFT",
+    "description": "Mint your digital artwork on Arc Layer 1",
+    "upload": {
+      "title": "Upload File",
+      "clickUpload": "Click to upload or drag and drop",
+      "fileTypes": "PNG, JPG, GIF up to 10MB",
+      "changeImage": "Change Image"
+    },
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "e.g. 'Abstract Dreams #1'",
+      "price": "Price (USDC)",
+      "pricePlaceholder": "0.00",
+      "priceHelp": "Leave empty to mint without listing",
+      "description": "Description",
+      "descriptionPlaceholder": "Tell us about your NFT...",
+      "royalty": "Royalty (%)",
+      "royaltyHelp": "Earn this percentage on every secondary sale (max 10%)"
+    },
+    "info": {
+      "title": "Free Minting Available!",
+      "description": "Your first 5 NFTs are completely free to mint. After that, a small fee applies."
+    },
+    "button": {
+      "create": "Create NFT",
+      "minting": "Minting..."
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "Manage your NFT collection and profile",
+    "connectWallet": "Connect Your Wallet",
+    "connectWalletDescription": "Please connect your wallet to view your profile",
+    "tabs": {
+      "collected": "Collected",
+      "created": "Created",
+      "listed": "Listed"
+    },
+    "stats": {
+      "collected": "Collected",
+      "created": "Created",
+      "totalValue": "Total Value",
+      "floorPrice": "Floor Price"
+    },
+    "empty": {
+      "noNFTs": "No NFTs Yet",
+      "collected": "Start collecting NFTs from the marketplace",
+      "created": "Create your first NFT to get started",
+      "listed": "List your NFTs for sale"
+    }
+  },
+  "nft": {
+    "currentPrice": "Current Price",
+    "buyNow": "Buy Now",
+    "updateListing": "Update Listing",
+    "cancelListing": "Cancel Listing",
+    "description": "Description",
+    "details": "Details",
+    "activity": "Activity",
+    "ownedBy": "Owned by",
+    "createdBy": "Created by",
+    "you": "You",
+    "completePurchase": "Complete Purchase",
+    "price": "Price",
+    "creatorRoyalty": "Creator Royalty",
+    "total": "Total",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  }
+}
+
