@@ -140,7 +140,8 @@
   },
   "wallet": {
     "balance": "Saldo da Carteira",
-    "total_value": "Valor Total"
+    "total_value": "Valor Total",
+    "viewOnExplorer": "Ver no Explorador"
   },
   "footer": {
     "tagline": "O marketplace de NFTs mais rápido na Arc Layer 1",

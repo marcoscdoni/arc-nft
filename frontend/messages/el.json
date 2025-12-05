@@ -46,7 +46,8 @@
   },
   "wallet": {
     "balance": "Υπόλοιπο Πορτοφολιού",
-    "total_value": "Συνολική Αξία"
+    "total_value": "Συνολική Αξία",
+    "viewOnExplorer": "Προβολή στον Explorer"
   },
   "footer": {
     "tagline": "Το ταχύτερο NFT marketplace στο Arc Layer 1",
