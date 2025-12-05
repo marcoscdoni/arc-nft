@@ -1,260 +1,171 @@
-# 🎨 ArcGallery
+# ArcGallery
 
-Complete NFT Marketplace for **Arc Layer 1** (Circle's new blockchain).
+NFT marketplace running on Arc Layer 1 (Circle's blockchain).
 
-## 🌟 Features
+## What's inside
 
-### NFT Contract (ArcNFT)
-- ✅ **Free minting**: First 5 NFTs free per address
-- ✅ **Batch minting**: Mint multiple NFTs at once
-- ✅ **Automatic royalties**: 2.5% for creators
-- ✅ **IPFS metadata**: Full support for decentralized URIs
-- ✅ **Complete ERC721**: Compatible with OpenSea/Rarible standards
+The project has two main contracts:
 
-### Marketplace (ArcMarketplace)
-- ✅ **Listings**: List NFTs with fixed price
-- ✅ **Buy/Sell**: Buy listed NFTs instantly
-- ✅ **Offers**: Make offers on unlisted NFTs
-- ✅ **Auctions**: Create auctions with deadline and minimum bid
-- ✅ **Automatic royalties**: Paid automatically on each sale
-- ✅ **Platform fee**: 2.5% (configurable)
-- ✅ **Statistics**: Total sales and volume
+**ArcNFT** - the NFT contract itself. You can mint NFTs here, first 5 are free per wallet, then there's a small fee. Also handles royalties (2.5% goes to creators on secondary sales) and supports batch minting.
 
-## 📋 Prerequisites
+**ArcMarketplace** - where people can list, buy, and trade NFTs. Has listings with fixed prices, offers for NFTs not listed, and auctions with time limits. Marketplace takes a 2.5% cut that can be adjusted.
 
-- Node.js 18+ 
-- npm or yarn
-- MetaMask or compatible wallet
-- Arc testnet tokens (for gas fees)
+Everything uses IPFS for metadata and works with standard wallets like MetaMask.
 
-## 🚀 Installation
+## Getting started
 
-1. **Clone and install dependencies**:
+You'll need Node.js (18 or newer) and a wallet with some Arc testnet tokens. Get tokens from the faucet at https://faucet.arc-testnet.circle.com
+
+## Installation
+
+Clone the repo and install dependencies:
+
 ```bash
 npm install
 ```
 
-2. **Configure environment variables**:
+Create a `.env` file (copy from `.env.example`):
+
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and add:
+Add your private key to `.env`:
 ```env
-# Your private key (NEVER share or commit!)
 PRIVATE_KEY=your_private_key_here
-
-# Arc Testnet RPC (already configured)
 ARC_TESTNET_RPC_URL=https://rpc.arc-testnet.circle.com
-
-# Optional: For contract verification
-ARCSCAN_API_KEY=your_api_key_here
 ```
 
-3. **Compile contracts**:
+Don't commit this file! Your private key should stay private.
+
+Compile the contracts:
+
 ```bash
 npm run compile
 ```
 
-## 🧪 Tests
+## Running tests
 
-Run the complete test suite:
+## Running tests
 
 ```bash
 npm test
 ```
 
-Tests include:
-- ✅ Free and paid minting
-- ✅ Batch minting
-- ✅ Listings and purchases
-- ✅ Offers system
-- ✅ Auctions
-- ✅ Royalties and fees
-- ✅ Statistics
+Tests cover minting (free and paid), batch operations, listings, buying, offers, auctions, and the royalty/fee system.
 
-## 📦 Deploy to Arc Testnet
+## Deploying
 
-### 1. Get testnet tokens
+Make sure you have testnet tokens first - get them from https://faucet.arc-testnet.circle.com
 
-Visit Arc's faucet to get test tokens:
-- 🔗 Faucet: [https://faucet.arc-testnet.circle.com](https://faucet.arc-testnet.circle.com)
-- 🔗 Explorer: [https://arcscan.net](https://arcscan.net)
-
-### 2. Run deployment
+Then run:
 
 ```bash
 npm run deploy:testnet
 ```
 
-The script will:
-1. Deploy ArcNFT contract
-2. Deploy ArcMarketplace contract
-3. Save addresses to `deployments/arc-testnet.json`
-4. Show instructions for next steps
+This deploys both contracts and saves the addresses to `deployments/arc-testnet.json`. You can verify the contracts on the explorer later if you want.
 
-### 3. Update .env
+## Using the contracts
 
-After deployment, update your `.env` with the addresses:
-```env
-NFT_CONTRACT_ADDRESS=0x...
-MARKETPLACE_CONTRACT_ADDRESS=0x...
-```
+There's an interaction script that mints an NFT, approves the marketplace, and lists it:
 
-### 4. Verify contracts (Optional)
+## Using the contracts
 
-```bash
-npx hardhat verify --network arcTestnet YOUR_NFT_ADDRESS
-npx hardhat verify --network arcTestnet YOUR_MARKETPLACE_ADDRESS
-```
-
-## 💻 Interacting with Contracts
-
-### Quick Interaction Script
+There's an interaction script that mints an NFT, approves the marketplace, and lists it:
 
 ```bash
 npm run interact
 ```
 
-This script will:
-1. Mint a test NFT
-2. Approve the marketplace
-3. List the NFT for sale
-
-### Via Hardhat Console
+Or you can use the Hardhat console directly:
 
 ```bash
 npx hardhat console --network arcTestnet
 ```
 
+Quick example:
+
 ```javascript
-// Connect to contracts
 const nft = await ethers.getContractAt("ArcNFT", "NFT_ADDRESS");
 const marketplace = await ethers.getContractAt("ArcMarketplace", "MARKETPLACE_ADDRESS");
 
-// Mint NFT
-const tx = await nft.mint("ipfs://your_metadata_uri");
-await tx.wait();
+// mint an NFT
+await nft.mint("ipfs://your_metadata_uri");
 
-// View your NFTs
+// check your NFTs
 const tokens = await nft.tokensOfOwner("YOUR_ADDRESS");
-console.log("Your NFTs:", tokens.toString());
 
-// Approve marketplace
+// approve marketplace to handle your NFTs
 await nft.setApprovalForAll("MARKETPLACE_ADDRESS", true);
 
-// List NFT
-const price = ethers.parseEther("0.1"); // 0.1 ETH
+// list it for 0.1 ETH
+const price = ethers.parseEther("0.1");
 await marketplace.listItem("NFT_ADDRESS", 1, price);
-
-// View listings
-const listing = await marketplace.getListing("NFT_ADDRESS", 1);
-console.log("Price:", ethers.formatEther(listing.price));
 ```
 
-## 📊 Project Structure
+## Project structure
+
+## Project structure
 
 ```
-arc-projeto/
-├── contracts/
-│   ├── ArcNFT.sol              # ERC721 NFT Contract
-│   └── ArcMarketplace.sol      # Marketplace Contract
-├── scripts/
-│   ├── deploy.ts               # Deployment script
-│   └── interact.ts             # Interaction script
-├── test/
-│   ├── ArcNFT.test.ts          # NFT tests
-│   └── ArcMarketplace.test.ts  # Marketplace tests
-├── deployments/                # Deployed addresses
-├── hardhat.config.ts           # Hardhat configuration
-├── package.json
-└── README.md
+arc-gallery/
+├── contracts/           # Solidity contracts
+├── scripts/             # Deploy and interaction scripts
+├── test/                # Contract tests
+├── deployments/         # Deployment addresses
+└── frontend/            # Next.js web app
 ```
 
-## 🔧 Arc Testnet Settings
+## Arc Testnet info
 
-| Parameter | Value |
-|-----------|-------|
-| Network Name | Arc Testnet |
-| RPC URL | https://rpc.arc-testnet.circle.com |
-| Chain ID | 62298 |
-| Currency Symbol | ETH |
-| Block Explorer | https://arcscan.net |
+- RPC: https://rpc.arc-testnet.circle.com
+- Chain ID: 62298
+- Explorer: https://arcscan.net
+- Faucet: https://faucet.arc-testnet.circle.com
 
-## 📝 Metadata Example (IPFS)
+## Common issues
+
+**"Insufficient payment for mint"** - After the first 5 free mints, you need to pay 0.01 ETH per mint.
+
+**"Marketplace not approved"** - Call `setApprovalForAll` on the NFT contract before listing.
+
+**"Insufficient funds"** - Get more tokens from the faucet.
+
+**Transaction stuck** - Try increasing gas price in `hardhat.config.ts` or check the explorer.
+
+## Metadata format
+
+NFT metadata should be JSON on IPFS:
+
+## Metadata format
+
+NFT metadata should be JSON on IPFS:
 
 ```json
 {
-  "name": "Arc NFT #1",
-  "description": "NFT from Arc Marketplace collection",
+  "name": "My Cool NFT",
+  "description": "Something interesting about this NFT",
   "image": "ipfs://QmExample.../image.png",
   "attributes": [
-    {
-      "trait_type": "Background",
-      "value": "Blue"
-    },
-    {
-      "trait_type": "Rarity",
-      "value": "Common"
-    }
+    {"trait_type": "Background", "value": "Blue"},
+    {"trait_type": "Rarity", "value": "Rare"}
   ]
 }
 ```
 
-## 🛠️ Troubleshooting
+## What's next
 
-### Error: "Insufficient payment for mint"
-- Make sure to send the correct value after the 5 free mints
-- Current value: 0.01 ETH
+Working on:
+- Finishing the Next.js frontend
+- Adding support for multiple collections
+- IPFS integration (probably Pinata or NFT.Storage)
+- Better analytics
 
-### Error: "Marketplace not approved"
-- Approve the marketplace before listing: `nft.setApprovalForAll(marketplaceAddress, true)`
+## License
 
-### Error: "Insufficient funds"
-- Get more testnet tokens from the faucet
-
-### Transaction pending for too long
-- Increase gas price in hardhat.config.ts
-- Check status in explorer
-
-## 🔐 Security
-
-⚠️ **IMPORTANT**:
-- NEVER share your PRIVATE_KEY
-- NEVER commit `.env` files
-- Use different addresses for testnet and mainnet
-- Test extensively before using in production
-
-## 📚 Resources
-
-- 🌐 [Arc Documentation](https://developers.circle.com/arc)
-- 📖 [Hardhat Docs](https://hardhat.org/docs)
-- 🎨 [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts)
-- 🔗 [Solidity Docs](https://docs.soliditylang.org)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a branch for your feature
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details
-
-## ⭐ Roadmap
-
-- [ ] Complete Next.js frontend
-- [ ] Multi-collection support
-- [ ] Reputation system
-- [ ] Lazy minting
-- [ ] IPFS integration (Pinata/NFT.Storage)
-- [ ] Analytics dashboard
-- [ ] Mobile app
+MIT - do whatever you want with it.
 
 ---
 
-**Built for Arc Layer 1** 🚀
+Built for Arc Layer 1
