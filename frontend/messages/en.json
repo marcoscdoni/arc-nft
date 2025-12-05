@@ -95,6 +95,22 @@
     "button": {
       "create": "Create NFT",
       "minting": "Minting..."
+    },
+    "progress": {
+      "preparing": "Preparing NFT...",
+      "minting": "Minting NFT...",
+      "approving": "Approving...",
+      "listing": "Listing for Sale...",
+      "preparingDesc": "Uploading your artwork",
+      "mintingDesc": "Creating your NFT on the blockchain",
+      "approvingDesc": "Granting marketplace permissions",
+      "listingDesc": "Publishing to marketplace",
+      "stepPreparing": "Preparing NFT",
+      "stepMinting": "Minting NFT",
+      "stepApproving": "Approving Marketplace",
+      "stepListing": "Listing for Sale",
+      "viewExplorer": "View on Explorer",
+      "confirmWallet": "Please confirm the transaction in your wallet"
     }
   },
   "profile": {

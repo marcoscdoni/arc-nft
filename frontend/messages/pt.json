@@ -95,6 +95,22 @@
     "button": {
       "create": "Criar NFT",
       "minting": "Cunhando..."
+    },
+    "progress": {
+      "preparing": "Preparando NFT...",
+      "minting": "Cunhando NFT...",
+      "approving": "Aprovando...",
+      "listing": "Listando para Venda...",
+      "preparingDesc": "Enviando sua arte",
+      "mintingDesc": "Criando seu NFT na blockchain",
+      "approvingDesc": "Concedendo permissões ao marketplace",
+      "listingDesc": "Publicando no marketplace",
+      "stepPreparing": "Preparando NFT",
+      "stepMinting": "Cunhando NFT",
+      "stepApproving": "Aprovando Marketplace",
+      "stepListing": "Listando para Venda",
+      "viewExplorer": "Ver no Explorer",
+      "confirmWallet": "Por favor, confirme a transação na sua carteira"
     }
   },
   "profile": {

@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useState, useRef } from 'react'
-import { Upload, Image as ImageIcon, Sparkles, CheckCircle, XCircle, ArrowRight, Info } from 'lucide-react'
+import { Upload, Image as ImageIcon, Sparkles, CheckCircle, XCircle, ArrowRight, Info, ExternalLink } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAccount, useReadContract } from 'wagmi'
 import { useNFTMint, useNFTApprove, useMarketplaceListing } from '@/hooks/use-nft-contract'
@@ -535,50 +535,72 @@ export default function CreatePage() {
           </div>
         )}
 
-        {/* Progress Tracker */}
+        {/* Progress Modal */}
         {currentStep !== 'form' && currentStep !== 'error' && currentStep !== 'success' && (
-          <div className="mb-8 rounded-xl border border-gray-800 bg-gray-900/50 p-6 backdrop-blur-sm">
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Transaction Progress</h3>
-            <div className="space-y-3">
-              <StepIndicator 
-                label="Uploading to IPFS" 
-                status={currentStep === 'uploading' ? 'active' : 'complete'}
-                progress={currentStep === 'uploading' ? Math.round((uploadProgress.image + uploadProgress.metadata) / 2) : undefined}
-              />
-              <StepIndicator 
-                label="Minting NFT" 
-                status={currentStep === 'minting' || currentStep === 'approving' || currentStep === 'listing' ? (currentStep === 'minting' ? 'active' : 'complete') : 'pending'} 
-              />
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+            <div className="mx-4 w-full max-w-md rounded-2xl border border-gray-800 bg-gray-900 p-8 shadow-2xl">
+              {/* Header */}
+              <div className="mb-6 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/20">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500/30 border-t-violet-500" />
+                </div>
+                <h3 className="text-xl font-bold text-white">
+                  {currentStep === 'uploading' && 'Preparing NFT...'}
+                  {currentStep === 'minting' && 'Minting NFT...'}
+                  {currentStep === 'approving' && 'Approving...'}
+                  {currentStep === 'listing' && 'Listing for Sale...'}
+                </h3>
+                <p className="mt-2 text-sm text-gray-400">
+                  {currentStep === 'uploading' && 'Uploading your artwork'}
+                  {currentStep === 'minting' && 'Creating your NFT on the blockchain'}
+                  {currentStep === 'approving' && 'Granting marketplace permissions'}
+                  {currentStep === 'listing' && 'Publishing to marketplace'}
+                </p>
+              </div>
+
+              {/* Simple Progress Steps */}
+              <div className="space-y-3">
+                <StepIndicator 
+                  label="Preparing NFT" 
+                  status={currentStep === 'uploading' ? 'active' : (currentStep === 'minting' || currentStep === 'approving' || currentStep === 'listing' ? 'complete' : 'pending')} 
+                />
+                <StepIndicator 
+                  label="Minting NFT" 
+                  status={currentStep === 'minting' ? 'active' : (currentStep === 'approving' || currentStep === 'listing' ? 'complete' : 'pending')} 
+                />
               {formData.price && parseFloat(formData.price) > 0 && (
                 <>
                   <StepIndicator 
                     label="Approving Marketplace" 
-                    status={currentStep === 'approving' || currentStep === 'listing' ? (currentStep === 'approving' ? 'active' : 'complete') : 'pending'} 
+                    status={currentStep === 'approving' ? 'active' : (currentStep === 'listing' ? 'complete' : 'pending')} 
                   />
                   <StepIndicator 
-                    label="Creating Listing" 
+                    label="Listing for Sale" 
                     status={currentStep === 'listing' ? 'active' : 'pending'} 
                   />
                 </>
               )}
             </div>
+            
+            {/* Transaction Link */}
             {(mintHash || approveHash || listingHash) && (
-              <div className="mt-5 rounded-lg bg-gray-800/50 p-4">
-                <p className="text-xs font-medium text-gray-400">Transaction Hash</p>
+              <div className="mt-6 rounded-lg bg-gray-800/50 p-3">
                 <a 
                   href={`https://testnet.arcscan.app/tx/${mintHash || approveHash || listingHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 block break-all font-mono text-sm text-violet-400 transition hover:text-violet-300 hover:underline"
+                  className="flex items-center gap-2 text-xs text-violet-400 transition hover:text-violet-300"
                 >
-                  {mintHash || approveHash || listingHash}
+                  <ExternalLink className="h-3 w-3" />
+                  View on Explorer
                 </a>
-                <p className="mt-3 flex items-center gap-2 text-xs text-yellow-400">
-                  <Info className="h-3.5 w-3.5" />
-                  Waiting for blockchain confirmation...
-                </p>
               </div>
             )}
+
+            <p className="mt-6 text-center text-xs text-gray-500">
+              Please confirm the transaction in your wallet
+            </p>
+            </div>
           </div>
         )}
 
@@ -748,42 +770,44 @@ export default function CreatePage() {
               </p>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isMinting || isMintConfirming || isApproving || isApproveConfirming || isListing || isListingConfirming || currentStep === 'uploading'}
-              className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-8 py-4 font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-violet-500/30"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-violet-400 opacity-0 transition group-hover:opacity-100 group-disabled:opacity-0" />
-              <span className="relative flex items-center justify-center gap-2.5">
-                {isMinting || isMintConfirming ? (
-                  <>
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    {isMintConfirming ? 'Confirming Transaction...' : 'Minting NFT...'}
-                  </>
-                ) : isApproving || isApproveConfirming ? (
-                  <>
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Approving Marketplace...
-                  </>
-                ) : isListing || isListingConfirming ? (
-                  <>
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Creating Listing...
-                  </>
-                ) : currentStep === 'uploading' ? (
-                  <>
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Uploading to IPFS...
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="h-5 w-5" />
-                    Create NFT
-                  </>
-                )}
-              </span>
-            </button>
+            {/* Submit Button - Hidden when success */}
+            {currentStep !== 'success' && (
+              <button
+                type="submit"
+                disabled={isMinting || isMintConfirming || isApproving || isApproveConfirming || isListing || isListingConfirming || currentStep === 'uploading'}
+                className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-8 py-4 font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-violet-500/30"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-violet-400 opacity-0 transition group-hover:opacity-100 group-disabled:opacity-0" />
+                <span className="relative flex items-center justify-center gap-2.5">
+                  {isMinting || isMintConfirming ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      {isMintConfirming ? 'Confirming Transaction...' : 'Minting NFT...'}
+                    </>
+                  ) : isApproving || isApproveConfirming ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Approving Marketplace...
+                    </>
+                  ) : isListing || isListingConfirming ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Creating Listing...
+                    </>
+                  ) : currentStep === 'uploading' ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Uploading to IPFS...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-5 w-5" />
+                      Create NFT
+                    </>
+                  )}
+                </span>
+              </button>
+            )}
           </form>
         </div>
       </div>
