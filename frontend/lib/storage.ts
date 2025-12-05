@@ -2,11 +2,9 @@
  * Storage Integration
  * 
  * Handles file uploads:
- * - Profile images (avatar/banner) -> Supabase Storage (simple, fast, free)
- * - NFT images/metadata -> IPFS via Pinata (permanent, decentralized)
+ * - Profile images (avatar/banner) -> Cloudflare R2 (fast, scalable, permanent)
+ * - NFT images/metadata -> IPFS via Pinata (decentralized)
  */
-
-import { createSupabaseClient } from '@/lib/supabase'
 
 export interface UploadProgress {
   loaded: number;
@@ -15,16 +13,16 @@ export interface UploadProgress {
 }
 
 /**
- * Upload profile image to Supabase Storage
+ * Upload profile image to Cloudflare R2 via API route
  * @param file - Image file to upload
- * @param userId - User ID for folder organization
+ * @param walletAddress - Wallet address for folder organization
  * @param type - Type of image (avatar or banner)
  * @param onProgress - Optional callback for upload progress
  * @returns Public URL of uploaded image
  */
 export async function uploadProfileImage(
   file: File,
-  userId: string,
+  walletAddress: string,
   type: 'avatar' | 'banner',
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string> {
@@ -42,41 +40,35 @@ export async function uploadProfileImage(
       throw new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed');
     }
 
-    const supabase = createSupabaseClient();
-
     // Simulate initial progress
     if (onProgress) {
       onProgress({ loaded: 0, total: file.size, percentage: 0 });
     }
 
-    // Generate unique filename
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}/${type}-${Date.now()}.${fileExt}`;
+    // Upload via API route (R2 requires server-side)
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('walletAddress', walletAddress);
+    formData.append('type', type);
 
-    // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('avatars')
-      .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: true,
-      });
+    const response = await fetch('/api/upload-profile', {
+      method: 'POST',
+      body: formData,
+    });
 
-    if (error) {
-      console.error('Supabase upload error:', error);
-      throw error;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(data.path);
+    const { url } = await response.json();
 
     // Simulate progress completion
     if (onProgress) {
       onProgress({ loaded: file.size, total: file.size, percentage: 100 });
     }
 
-    return publicUrl;
+    return url;
   } catch (error) {
     console.error('Error uploading profile image:', error);
     throw new Error('Failed to upload profile image');

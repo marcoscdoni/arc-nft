@@ -110,6 +110,41 @@ export async function uploadToR2(
 }
 
 /**
+ * Upload profile images (avatar/banner) to Cloudflare R2
+ */
+export async function uploadProfileToR2(
+  file: File,
+  walletAddress: string,
+  type: 'avatar' | 'banner'
+): Promise<string> {
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fileExt = file.name.split('.').pop() || 'png';
+    const fileKey = `profiles/${walletAddress}/${type}-${Date.now()}.${fileExt}`;
+
+    await r2Client.send(
+      new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: fileKey,
+        Body: buffer,
+        ContentType: file.type,
+        CacheControl: "public, max-age=31536000, immutable",
+        Metadata: {
+          uploadedAt: new Date().toISOString(),
+          walletAddress: walletAddress,
+          type: type,
+        },
+      })
+    );
+
+    return `${PUBLIC_URL}/${fileKey}`;
+  } catch (error) {
+    console.error("❌ Erro ao fazer upload de perfil para R2:", error);
+    throw new Error(`Falha no upload para R2: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
+  }
+}
+
+/**
  * Valida se as variáveis de ambiente do R2 estão configuradas
  */
 export function validateR2Config(): boolean {
