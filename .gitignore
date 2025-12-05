@@ -18,10 +18,19 @@ frontend/node_modules
 frontend/.next
 frontend/out
 frontend/build
+frontend/.env.local
 
 # Misc
 .DS_Store
 *.log
+
+# AI Instructions & Private Docs (não commitado mas salvo no backup)
+.ai/
+docs/private/
+docs-private/
+*.ai.md
+*-prompt.md
+*-instructions.md
 
 # Internal docs
 .github/instructions/
