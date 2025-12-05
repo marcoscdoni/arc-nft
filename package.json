@@ -1,7 +1,7 @@
 {
-  "name": "arc-nft",
+  "name": "arc-gallery",
   "version": "1.0.0",
-  "description": "Complete NFT Marketplace for Arc Layer 1 with web interface",
+  "description": "ArcGallery - Complete NFT Marketplace for Arc Layer 1 with web interface",
   "scripts": {
     "dev": "cd frontend && npm run dev",
     "build": "cd frontend && npm run build",

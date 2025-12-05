@@ -1,4 +1,4 @@
-# 🎨 Arc NFT Marketplace
+# 🎨 ArcGallery
 
 Complete NFT Marketplace for **Arc Layer 1** (Circle's new blockchain).
 

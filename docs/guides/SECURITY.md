@@ -1,4 +1,4 @@
-# 🔐 Guia de Segurança - ArcNFT Marketplace
+# 🔐 Guia de Segurança - ArcGallery
 
 ## Camadas de Segurança Implementadas
 

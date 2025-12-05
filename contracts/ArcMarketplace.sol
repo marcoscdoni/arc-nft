@@ -8,7 +8,7 @@ import "./ArcNFT.sol";
 
 /**
  * @title ArcMarketplace
- * @dev NFT Marketplace with listings, offers, and auctions
+ * @dev NFT Marketplace with listings, offers, and auctions - Part of ArcGallery
  * Supports automatic royalty payments to creators
  * @author Built for Arc Layer 1
  */

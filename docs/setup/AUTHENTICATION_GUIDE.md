@@ -54,7 +54,7 @@ await saveProfile(...);
 A mensagem mostrada ao usuário contém:
 
 ```
-Sign this message to authenticate with ArcNFT Marketplace.
+Sign this message to authenticate with ArcGallery.
 
 Wallet: 0x1234...5678
 Timestamp: 2025-12-03T10:30:00.000Z

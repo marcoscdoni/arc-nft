@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title ArcNFT
- * @dev NFT Contract optimized for Arc Layer 1
+ * @dev NFT Contract optimized for Arc Layer 1 - Part of ArcGallery
  * Main features: free minting (first 5), royalties, batch mint
  * @author Built for Arc ecosystem
  */

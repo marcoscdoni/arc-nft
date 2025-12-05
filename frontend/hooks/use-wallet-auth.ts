@@ -66,7 +66,7 @@ export function useWalletAuth(): UseWalletAuthReturn {
 
     try {
       const timestamp = Date.now();
-      const message = `Sign this message to authenticate with ArcNFT Marketplace.
+      const message = `Sign this message to authenticate with ArcGallery.
 
 Wallet: ${address}
 Timestamp: ${new Date(timestamp).toISOString()}
