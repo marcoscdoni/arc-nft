@@ -173,10 +173,13 @@
     "profile": {
       "updated": "Profile updated successfully!",
       "updateFailed": "Failed to update profile",
-      "uploadingAvatar": "Uploading avatar to IPFS...",
-      "uploadingBanner": "Uploading banner to IPFS...",
+      "uploadingAvatar": "Uploading avatar...",
+      "uploadingBanner": "Uploading banner...",
       "savingDatabase": "Saving to database...",
-      "saving": "Saving profile..."
+      "saving": "Saving profile...",
+      "avatarTooLarge": "Avatar must be less than 2MB",
+      "bannerTooLarge": "Banner must be less than 5MB",
+      "invalidImageType": "Only JPEG, PNG, GIF, and WebP images are allowed"
     },
     "auth": {
       "required": "Authentication required. Please sign the message to verify your wallet.",

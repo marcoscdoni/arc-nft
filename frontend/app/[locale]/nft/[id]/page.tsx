@@ -2,43 +2,60 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import { Heart, Share2, Flag, ExternalLink, Clock, DollarSign, User } from 'lucide-react'
 import { formatUnits } from 'viem'
+import { getNFTById } from '@/lib/supabase'
+import type { NFT } from '@/lib/supabase'
 
 export default function NFTDetailPage() {
   const params = useParams()
   const { address } = useAccount()
   const [isLiked, setIsLiked] = useState(false)
   const [showBuyModal, setShowBuyModal] = useState(false)
+  const [nft, setNft] = useState<NFT | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Mock data - replace with actual contract data
-  const nft = {
-    id: params.id,
-    name: 'Cosmic Journey #42',
-    image: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=800&h=800&fit=crop',
-    description: 'An ethereal journey through the cosmos, featuring vibrant nebulae and distant galaxies. This unique piece captures the infinite beauty of space in stunning detail.',
-    price: '1250.00',
-    owner: '0x1234567890123456789012345678901234567890',
-    creator: '0x9876543210987654321098765432109876543210',
-    royalty: 2.5,
-    tokenId: '42',
-    contractAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
-    metadata: {
-      created: '2024-01-15',
-      edition: '1 of 1',
-      category: 'Digital Art',
-    },
+  useEffect(() => {
+    async function loadNFT() {
+      if (!params.id || typeof params.id !== 'string') return
+      
+      setLoading(true)
+      try {
+        const data = await getNFTById(params.id)
+        setNft(data)
+      } catch (error) {
+        console.error('Failed to load NFT:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadNFT()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    )
   }
 
-  const activity = [
-    { type: 'Minted', from: 'NullAddress', to: '0x9876...3210', price: null, date: '2024-01-15' },
-    { type: 'Listed', from: '0x9876...3210', to: null, price: '1250.00', date: '2024-01-16' },
-  ]
+  if (!nft) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">NFT not found</div>
+      </div>
+    )
+  }
 
-  const isOwner = address?.toLowerCase() === nft.owner.toLowerCase()
+  // Activity will come from blockchain events later
+  const activity: Array<{type: string; from: string; to: string | null; price: string | null; date: string}> = []
+
+  const isOwner = address ? address.toLowerCase() === nft.owner_address.toLowerCase() : false
 
   return (
     <div className="min-h-screen bg-black py-12">
@@ -48,7 +65,7 @@ export default function NFTDetailPage() {
           <div className="space-y-4">
             <div className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
               <img
-                src={nft.image}
+                src={nft.image_url}
                 alt={nft.name}
                 className="aspect-square w-full object-cover"
               />
@@ -57,7 +74,7 @@ export default function NFTDetailPage() {
             {/* Description */}
             <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
               <h3 className="mb-2 text-lg font-semibold text-white">Description</h3>
-              <p className="text-gray-400">{nft.description}</p>
+              <p className="text-gray-400">{nft.description || 'No description'}</p>
             </div>
 
             {/* Details */}
@@ -67,18 +84,18 @@ export default function NFTDetailPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-400">Contract Address</span>
                   <a
-                    href={`https://testnet.arcscan.app/address/${nft.contractAddress}`}
+                    href={`https://testnet.arcscan.app/address/${nft.contract_address}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-violet-400 hover:text-violet-300"
                   >
-                    {nft.contractAddress.slice(0, 6)}...{nft.contractAddress.slice(-4)}
+                    {nft.contract_address.slice(0, 6)}...{nft.contract_address.slice(-4)}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Token ID</span>
-                  <span className="text-white">{nft.tokenId}</span>
+                  <span className="text-white">{nft.token_id}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Token Standard</span>
@@ -90,7 +107,7 @@ export default function NFTDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Creator Royalty</span>
-                  <span className="text-white">{nft.royalty}%</span>
+                  <span className="text-white">{nft.royalty_percentage || 0}%</span>
                 </div>
               </div>
             </div>
@@ -103,7 +120,7 @@ export default function NFTDetailPage() {
               <div className="mb-4 flex items-start justify-between">
                 <div>
                   <h1 className="text-4xl font-bold text-white">{nft.name}</h1>
-                  <p className="mt-2 text-gray-400">{nft.metadata.edition}</p>
+                  <p className="mt-2 text-gray-400">Token #{nft.token_id}</p>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -130,25 +147,26 @@ export default function NFTDetailPage() {
                 <div>
                   <p className="text-xs text-gray-400">Owned by</p>
                   <a
-                    href={`/profile/${nft.owner}`}
+                    href={`/profile/${nft.owner_address}`}
                     className="text-sm font-medium text-violet-400 hover:text-violet-300"
                   >
-                    {isOwner ? 'You' : `${nft.owner.slice(0, 6)}...${nft.owner.slice(-4)}`}
+                    {address?.toLowerCase() === nft.owner_address.toLowerCase() ? 'You' : `${nft.owner_address.slice(0, 6)}...${nft.owner_address.slice(-4)}`}
                   </a>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">Created by</p>
                   <a
-                    href={`/profile/${nft.creator}`}
+                    href={`/profile/${nft.creator_address}`}
                     className="text-sm font-medium text-violet-400 hover:text-violet-300"
                   >
-                    {nft.creator.slice(0, 6)}...{nft.creator.slice(-4)}
+                    {nft.creator_address.slice(0, 6)}...{nft.creator_address.slice(-4)}
                   </a>
                 </div>
               </div>
             </div>
 
-            {/* Price Card */}
+            {/* Price Card - TODO: fetch listing data from Supabase */}
+            {/* 
             <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
               <div className="mb-4">
                 <p className="text-sm text-gray-400">Current Price</p>
@@ -175,6 +193,22 @@ export default function NFTDetailPage() {
                   Buy Now
                 </button>
               )}
+            </div>
+            */}
+
+            {/* NFT Info Card */}
+            <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-400">Status</p>
+                  <p className="text-lg font-semibold text-white">Not Listed</p>
+                </div>
+                {isOwner && (
+                  <button className="w-full rounded-lg bg-violet-600 px-6 py-3 font-semibold text-white shadow-lg shadow-violet-500/50 transition hover:bg-violet-500">
+                    List for Sale
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Activity */}

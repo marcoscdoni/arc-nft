@@ -67,6 +67,8 @@ export interface NFT {
   updated_at: string;
   minted_at?: string;
   last_transfer_at?: string;
+  price?: string; // Price from active listing (if any)
+  listing_id?: number; // Listing ID (if any)
 }
 
 export interface Listing {
@@ -177,7 +179,14 @@ export async function getNFTs(filters?: {
 }): Promise<NFT[]> {
   let query = supabase
     .from('nfts')
-    .select('*')
+    .select(`
+      *,
+      listings!left(
+        listing_id,
+        price,
+        is_active
+      )
+    `)
     .order('created_at', { ascending: false });
 
   if (filters?.owner) {
@@ -203,7 +212,20 @@ export async function getNFTs(filters?: {
     return [];
   }
 
-  return data || [];
+  // Process data to extract active listing price
+  const nftsWithPrice = (data || []).map((nft: any) => {
+    const activeListings = nft.listings?.filter((l: any) => l.is_active) || [];
+    const activeListing = activeListings[0]; // Get first active listing
+    
+    return {
+      ...nft,
+      price: activeListing?.price,
+      listing_id: activeListing?.listing_id,
+      listings: undefined, // Remove the nested listings array
+    };
+  });
+
+  return nftsWithPrice;
 }
 
 export async function getNFTById(id: string): Promise<NFT | null> {
@@ -235,6 +257,43 @@ export async function getNFTByTokenId(contractAddress: string, tokenId: number):
   }
 
   return data;
+}
+
+// API function to index/create NFT after minting
+export async function indexNFT(params: {
+  tokenId: number;
+  contractAddress: string;
+  ownerAddress: string;
+  creatorAddress: string;
+  name: string;
+  description?: string;
+  imageUrl: string;
+  metadataUrl: string;
+  metadataJson?: any;
+  royaltyPercentage?: number;
+}): Promise<NFT | null> {
+  // Call API route which uses service role key
+  try {
+    const response = await fetch('/api/nfts/index', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || `HTTP ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log('✅ NFT indexed successfully:', data)
+    return data
+  } catch (error: any) {
+    console.error('Failed to index NFT:', error.message)
+    throw error
+  }
 }
 
 // API functions for listings
@@ -274,6 +333,38 @@ export async function getActiveListings(filters?: {
   }
 
   return data || [];
+}
+
+// API function to index/create listing after creation on-chain
+export async function indexListing(params: {
+  listingId: number;
+  nftId: string;
+  sellerAddress: string;
+  price: string;
+  tokenAddress: string;
+}): Promise<Listing | null> {
+  const client = createSupabaseClient(params.sellerAddress);
+
+  const { data, error } = await client
+    .from('listings')
+    .insert({
+      listing_id: params.listingId,
+      nft_id: params.nftId,
+      seller_address: params.sellerAddress.toLowerCase(),
+      price: params.price,
+      token_address: params.tokenAddress.toLowerCase(),
+      is_active: true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error indexing listing:', error);
+    return null;
+  }
+
+  console.log('✅ Listing indexed successfully:', data);
+  return data;
 }
 
 // API functions for favorites

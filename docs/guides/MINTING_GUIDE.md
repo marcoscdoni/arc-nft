@@ -8,7 +8,7 @@ Primeiro, faça o deploy dos contratos na rede Arc testnet:
 
 ```bash
 # No diretório raiz do projeto
-cd /home/marcos/Projetos/arc-projeto
+cd /home/marcos/Projetos/arc-nft
 
 # Deploy dos contratos
 npx hardhat run scripts/deploy.ts --network arc_testnet
@@ -27,25 +27,15 @@ export const CONTRACTS = {
 }
 ```
 
-### 3. Configurar IPFS (Pinata)
+### 3. Configurar Cloudflare R2
 
-Para fazer upload das imagens para IPFS:
+Siga o guia completo em [R2_SETUP.md](../setup/R2_SETUP.md) para configurar o armazenamento de imagens e metadados.
 
-1. Crie uma conta em: https://app.pinata.cloud/
-2. Gere suas API keys em: Account > API Keys
-3. Copie o arquivo `.env.example` para `.env.local`:
-
-```bash
-cd frontend
-cp .env.example .env.local
-```
-
-4. Edite `.env.local` e adicione suas chaves:
-
-```env
-NEXT_PUBLIC_PINATA_API_KEY=sua_chave_api
-NEXT_PUBLIC_PINATA_SECRET_KEY=sua_chave_secreta
-```
+Principais passos:
+1. Criar bucket no Cloudflare R2
+2. Configurar domínio público (ou usar R2.dev)
+3. Gerar API tokens
+4. Adicionar credenciais no `.env.local`
 
 ### 4. WalletConnect (Opcional mas Recomendado)
 
@@ -63,21 +53,25 @@ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=seu_project_id
 ### Fluxo Completo
 
 1. **Upload da Imagem**
-   - Usuário seleciona uma imagem (PNG, JPG, GIF)
-   - Imagem é enviada para IPFS via Pinata
-   - Retorna: `ipfs://QmHash...`
+   - Usuário seleciona uma imagem (PNG, JPG, GIF, WebP)
+   - Imagem é enviada para Cloudflare R2 via API route
+   - Retorna: `https://nft.arcgallery.xyz/images/...`
 
 2. **Criação dos Metadados**
-   - Nome, descrição, royalty são combinados com a URI da imagem
-   - Metadados JSON são enviados para IPFS
-   - Retorna: `ipfs://QmMetadataHash...`
+   - Nome, descrição, royalty são combinados com a URL da imagem
+   - Metadados JSON são enviados para R2
+   - Retorna: `https://nft.arcgallery.xyz/metadata/...`
 
 3. **Mint do NFT**
    - Chama `ArcNFT.mint(tokenURI)`
    - Aguarda confirmação da transação
    - NFT é mintado para a carteira do usuário
 
-4. **Listagem (Opcional)**
+4. **Indexação no Supabase**
+   - NFT é automaticamente indexado no banco de dados
+   - Sincronização com blockchain via eventos
+
+5. **Listagem (Opcional)**
    - Se o usuário definiu um preço:
      - Aprova o Marketplace: `ArcNFT.approve(marketplaceAddress, tokenId)`
      - Cria a listagem: `Marketplace.createListing(nftAddress, tokenId, price)`
@@ -96,6 +90,7 @@ await approve(tokenId)
 // Criar Listagem
 const { createListing } = useMarketplaceListing()
 await createListing(tokenId, priceInUSDC)
+```
 
 // Comprar NFT
 const { buyNFT } = useMarketplaceBuy()

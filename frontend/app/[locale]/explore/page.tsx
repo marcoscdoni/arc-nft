@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, SlidersHorizontal, TrendingUp, Clock, DollarSign } from 'lucide-react'
 import { NFTCard } from '@/components/nft-card'
+import { getNFTs, type NFT } from '@/lib/supabase'
 
 // Mock data - replace with actual contract data
 const mockNFTs = [
@@ -91,20 +92,39 @@ export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'price-low' | 'price-high' | 'trending'>('recent')
   const [category, setCategory] = useState<'all' | 'art' | 'photography' | 'gaming' | '3d'>('all')
+  const [nfts, setNfts] = useState<NFT[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Fetch NFTs from Supabase
+  useEffect(() => {
+    async function fetchNFTs() {
+      setIsLoading(true)
+      try {
+        const data = await getNFTs({ limit: 100 })
+        setNfts(data)
+      } catch (error) {
+        console.error('Error fetching NFTs:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchNFTs()
+  }, [])
 
   // Filter and sort NFTs
-  const filteredNFTs = mockNFTs
+  const filteredNFTs = nfts
     .filter((nft) => {
       const matchesSearch = nft.name.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesCategory = category === 'all' || nft.category === category
-      return matchesSearch && matchesCategory
+      // Category filtering removed since we don't have categories yet
+      return matchesSearch
     })
     .sort((a, b) => {
       switch (sortBy) {
         case 'price-low':
-          return parseFloat(a.price) - parseFloat(b.price)
+          return parseFloat(a.price || '0') - parseFloat(b.price || '0')
         case 'price-high':
-          return parseFloat(b.price) - parseFloat(a.price)
+          return parseFloat(b.price || '0') - parseFloat(a.price || '0')
         case 'trending':
         case 'recent':
         default:
@@ -188,16 +208,20 @@ export default function ExplorePage() {
         </div>
 
         {/* NFT Grid */}
-        {filteredNFTs.length > 0 ? (
+        {isLoading ? (
+          <div className="flex min-h-[400px] items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+          </div>
+        ) : filteredNFTs.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredNFTs.map((nft) => (
               <NFTCard
                 key={nft.id}
-                id={nft.id}
+                id={nft.token_id.toString()}
                 name={nft.name}
-                image={nft.image}
-                price={BigInt(parseFloat(nft.price) * 1e18)}
-                owner={nft.owner}
+                image={nft.image_url}
+                price={BigInt(nft.price || '0')}
+                owner={nft.owner_address}
               />
             ))}
           </div>

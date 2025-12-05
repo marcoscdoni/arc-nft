@@ -7,10 +7,14 @@ import { useState, useMemo } from 'react'
 import { WalletBalance } from './wallet-balance'
 import { LanguageSelector } from './language-selector'
 import { useTranslations } from 'next-intl'
+import { useNFTSync } from '@/hooks/use-nft-sync'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const t = useTranslations('navbar')
+  
+  // Hook para monitorar transferências de NFTs e atualizar Supabase
+  useNFTSync()
 
   // Memoize nav items to prevent recreation
   const navItems = useMemo(() => [

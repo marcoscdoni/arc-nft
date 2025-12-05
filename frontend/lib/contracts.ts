@@ -1,5 +1,7 @@
-// Contract addresses - update these after deployment
+// Contract addresses - Arc Testnet
 export const CONTRACTS = {
-  NFT: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Update with your deployed address
-  MARKETPLACE: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512', // Update with your deployed address
+  NFT: '0x88FEB9dcDbAbE6f3e2fEdCC643B183Ea061f6402',
+  MARKETPLACE: '0xb79A0cd345EDbaF64e2a0a41c0b6BFA32388253b',
 } as const
+
+export const ARC_CHAIN_ID = 5042002

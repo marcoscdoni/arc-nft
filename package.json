@@ -18,6 +18,8 @@
     "batch-mint": "hardhat run scripts/batch-mint.ts --network arcTestnet",
     "auction": "hardhat run scripts/create-auction.ts --network arcTestnet",
     "stats": "hardhat run scripts/stats.ts --network arcTestnet",
+    "sync-nfts": "cd frontend && npx ts-node --esm scripts/sync-nfts.ts",
+    "fix-images": "cd frontend && npx ts-node --esm scripts/fix-missing-images.ts",
     "console": "hardhat console --network arcTestnet"
   },
   "keywords": [

@@ -1,0 +1,18 @@
+{
+  "network": "Arc Testnet",
+  "chainId": 5042002,
+  "timestamp": "2025-12-04T00:00:00.000Z",
+  "contracts": {
+    "ArcNFT": "0x88FEB9dcDbAbE6f3e2fEdCC643B183Ea061f6402",
+    "ArcMarketplace": "0xb79A0cd345EDbaF64e2a0a41c0b6BFA32388253b"
+  },
+  "deployer": "0xee185ffc78C918c51f77c5aF613FC7633cE85497",
+  "transactions": {
+    "ArcNFT": "0x46b5e5a32a1199ec401accae9995a24e2d850f69d19cb1c69a67853ee5d4e450",
+    "ArcMarketplace": "0x4500f061f6b29dd00e5afb36271333cef840dcd6ed58d53aca1a2526d0247b5b"
+  },
+  "explorer": {
+    "ArcNFT": "https://testnet.arcscan.app/address/0x88FEB9dcDbAbE6f3e2fEdCC643B183Ea061f6402",
+    "ArcMarketplace": "https://testnet.arcscan.app/address/0xb79A0cd345EDbaF64e2a0a41c0b6BFA32388253b"
+  }
+}

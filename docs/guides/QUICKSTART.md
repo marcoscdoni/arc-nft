@@ -66,13 +66,13 @@ const nft = await ethers.getContractAt("ArcNFT", process.env.NFT_CONTRACT_ADDRES
 const marketplace = await ethers.getContractAt("ArcMarketplace", process.env.MARKETPLACE_CONTRACT_ADDRESS);
 
 // 1. Mint NFT (primeiros 5 são grátis!)
-await nft.mint("ipfs://QmExampleHash/metadata.json");
+await nft.mint("https://nft.arcgallery.xyz/metadata/1234567890-abc123.json");
 
 // 2. Mint em batch (mais eficiente)
 const uris = [
-  "ipfs://QmHash1/1.json",
-  "ipfs://QmHash2/2.json",
-  "ipfs://QmHash3/3.json"
+  "https://nft.arcgallery.xyz/metadata/1.json",
+  "https://nft.arcgallery.xyz/metadata/2.json",
+  "https://nft.arcgallery.xyz/metadata/3.json"
 ];
 await nft.batchMint(uris);
 
@@ -191,12 +191,12 @@ Crie um arquivo para registrar suas atividades:
 
 ## 🎁 Extras
 
-### Criar Metadata JSON (para IPFS)
+### Criar Metadata JSON (para R2/Cloudflare)
 ```json
 {
   "name": "Arc Collection #1",
   "description": "Meu primeiro NFT na Arc Layer 1",
-  "image": "ipfs://QmImage.../image.png",
+  "image": "https://nft.arcgallery.xyz/images/1234567890-abc123.png",
   "attributes": [
     {
       "trait_type": "Color",
@@ -210,14 +210,12 @@ Crie um arquivo para registrar suas atividades:
 }
 ```
 
-### Upload para IPFS (Pinata)
-1. Acesse: https://pinata.cloud (grátis)
-2. Upload sua imagem → Copie CID
-3. Crie metadata.json com o CID
-4. Upload metadata.json → Use esse CID no mint
+### Storage de Arquivos
+O projeto usa **Cloudflare R2** para armazenar imagens e metadados dos NFTs.
+- Veja [R2_SETUP.md](../setup/R2_SETUP.md) para configuração completa
+- Upload automático via frontend (`/create`)
+- URLs públicas via domínio personalizado
 
 ---
 
 **Divirta-se construindo na Arc Layer 1! 🚀**
-
-Lembre-se: Qualidade > Quantidade. Melhor fazer atividades consistentes e variadas.

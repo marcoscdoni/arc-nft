@@ -8,19 +8,50 @@ import Image from 'next/image'
 import { Copy, ExternalLink, Settings, Share2, Edit2, Save, X, Upload, Lock } from 'lucide-react'
 import { NFTCard } from '@/components/nft-card'
 import { getProfile, upsertProfile, getNFTs, type Profile } from '@/lib/supabase'
-import { uploadImage } from '@/lib/nft-storage'
+import { uploadProfileImage } from '@/lib/storage'
 import { useWalletAuth } from '@/hooks/use-wallet-auth'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { useTranslations } from 'next-intl'
+
+const normalizeIpfsUrl = (url?: string | null) => {
+  if (!url) return null
+  
+  // R2/Cloudflare, Supabase Storage URLs, data URLs, and proxy URLs are ready to use
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/api/ipfs/')) {
+    return url
+  }
+
+  // Convert ipfs:// protocol to proxy (legacy support for old NFTs)
+  if (url.startsWith('ipfs://')) {
+    const cid = url.replace('ipfs://', '')
+    return `/api/ipfs/${cid}`
+  }
+
+  // Extract CID from any IPFS URL and normalize to proxy (legacy support)
+  const match = url.match(/\/ipfs\/([^/?#]+)/i)
+  if (match?.[1]) {
+    return `/api/ipfs/${match[1]}`
+  }
+
+  return url
+}
+
+const normalizeProfileUrls = (profileData: Profile): Profile => ({
+  ...profileData,
+  avatar_url: normalizeIpfsUrl(profileData.avatar_url) || undefined,
+  banner_url: normalizeIpfsUrl(profileData.banner_url) || undefined,
+})
 
 export default function ProfilePage() {
   const t = useTranslations('toast')
   const { address, isConnected } = useAccount()
   const { signAuth, isSigningAuth, authError, isAuthenticated } = useWalletAuth()
   const [activeTab, setActiveTab] = useState<'collected' | 'created' | 'listed'>('collected')
+  const [isMounted, setIsMounted] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [nfts, setNfts] = useState<any[]>([])
+  const [isLoadingNFTs, setIsLoadingNFTs] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -40,14 +71,6 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
 
-  // Load profile and NFTs on mount
-  useEffect(() => {
-    if (address && isConnected) {
-      loadProfileData()
-      loadNFTs()
-    }
-  }, [address, isConnected, activeTab])
-
   const loadProfileData = async () => {
     if (!address) return
     
@@ -55,17 +78,18 @@ export default function ProfilePage() {
     try {
       const profileData = await getProfile(address)
       if (profileData) {
-        setProfile(profileData)
+        const normalizedProfile = normalizeProfileUrls(profileData)
+        setProfile(normalizedProfile)
         setFormData({
-          username: profileData.username || '',
-          bio: profileData.bio || '',
-          twitter_handle: profileData.twitter_handle || '',
-          discord_handle: profileData.discord_handle || '',
-          website_url: profileData.website_url || '',
+          username: normalizedProfile.username || '',
+          bio: normalizedProfile.bio || '',
+          twitter_handle: normalizedProfile.twitter_handle || '',
+          discord_handle: normalizedProfile.discord_handle || '',
+          website_url: normalizedProfile.website_url || '',
         })
         // CRITICAL FIX: Set preview URLs from database
-        setAvatarPreview(profileData.avatar_url || null)
-        setBannerPreview(profileData.banner_url || null)
+        setAvatarPreview(normalizedProfile.avatar_url || null)
+        setBannerPreview(normalizedProfile.banner_url || null)
       }
     } catch (error) {
       console.error('Error loading profile:', error)
@@ -77,23 +101,88 @@ export default function ProfilePage() {
   const loadNFTs = async () => {
     if (!address) return
     
+    setIsLoadingNFTs(true)
     try {
-      const filters = activeTab === 'collected' 
-        ? { owner: address }
-        : activeTab === 'created'
-        ? { creator: address }
-        : { owner: address } // For listed, we'd need to join with listings table
+      console.log(`📡 Carregando NFTs (${activeTab})...`)
       
-      const nftData = await getNFTs(filters)
+      // Sempre tentar Supabase primeiro
+      let nftData = []
+      
+      if (activeTab === 'collected') {
+        nftData = await getNFTs({ owner: address })
+      } else if (activeTab === 'created') {
+        nftData = await getNFTs({ creator: address })
+      } else {
+        // Listed: buscar apenas do Supabase
+        nftData = await getNFTs({ owner: address })
+      }
+      
+      console.log(`✅ Carregados ${nftData.length} NFTs do Supabase`)
       setNfts(nftData)
+      
+      // Não buscar da blockchain automaticamente
+      // Isso evita o erro 429 e melhora performance
+      // Se precisar, adicionar um botão "Sync from Blockchain"
+      
     } catch (error) {
       console.error('Error loading NFTs:', error)
+      setNfts([])
+    } finally {
+      setIsLoadingNFTs(false)
     }
+  }
+
+  // Avoid hydration mismatch by rendering skeleton until mounted on client
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // Load profile and NFTs on mount
+  useEffect(() => {
+    if (!address || !isConnected) return
+    loadProfileData()
+    loadNFTs()
+  }, [address, isConnected, activeTab])
+
+  if (!isMounted) {
+    return (
+      <div className="relative min-h-screen py-12">
+        <div className="animated-gradient fixed inset-0 -z-10 opacity-30" />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="glass-card glow-violet mb-8 animate-pulse rounded-3xl border border-white/10">
+            <div className="h-48 bg-gradient-to-r from-violet-600 via-purple-600 to-cyan-600" />
+            <div className="space-y-4 px-8 py-10">
+              <div className="h-8 w-48 rounded-full bg-white/10" />
+              <div className="h-4 w-64 rounded-full bg-white/5" />
+              <div className="h-4 w-56 rounded-full bg-white/5" />
+              <div className="flex gap-4 pt-4">
+                <div className="h-12 flex-1 rounded-2xl bg-white/5" />
+                <div className="h-12 flex-1 rounded-2xl bg-white/5" />
+                <div className="h-12 flex-1 rounded-2xl bg-white/5" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validate file size (2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error(t('profile.avatarTooLarge') || 'Avatar must be less than 2MB')
+        return
+      }
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      if (!validTypes.includes(file.type)) {
+        toast.error(t('profile.invalidImageType') || 'Only JPEG, PNG, GIF, and WebP images are allowed')
+        return
+      }
+
       setAvatarFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -106,6 +195,19 @@ export default function ProfilePage() {
   const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t('profile.bannerTooLarge') || 'Banner must be less than 5MB')
+        return
+      }
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      if (!validTypes.includes(file.type)) {
+        toast.error(t('profile.invalidImageType') || 'Only JPEG, PNG, GIF, and WebP images are allowed')
+        return
+      }
+
       setBannerFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -144,13 +246,13 @@ export default function ProfilePage() {
       // Upload avatar if changed
       if (avatarFile) {
         toast.loading(t('profile.uploadingAvatar'), { id: uploadToast })
-        avatarUrl = await uploadImage(avatarFile)
+        avatarUrl = await uploadProfileImage(avatarFile, address, 'avatar')
       }
       
       // Upload banner if changed
       if (bannerFile) {
         toast.loading(t('profile.uploadingBanner'), { id: uploadToast })
-        bannerUrl = await uploadImage(bannerFile)
+        bannerUrl = await uploadProfileImage(bannerFile, address, 'banner')
       }
       
       // Save profile to Supabase with wallet validation
@@ -167,10 +269,13 @@ export default function ProfilePage() {
       }, address) // Pass authenticated wallet for validation
       
       if (updatedProfile) {
-        setProfile(updatedProfile)
+        const normalizedProfile = normalizeProfileUrls(updatedProfile)
+        setProfile(normalizedProfile)
         setIsEditing(false)
         setAvatarFile(null)
         setBannerFile(null)
+        setAvatarPreview(normalizedProfile.avatar_url || null)
+        setBannerPreview(normalizedProfile.banner_url || null)
         toast.success(t('profile.updated'), { id: uploadToast })
       } else {
         toast.error(t('profile.updateFailed'), { id: uploadToast })
@@ -212,8 +317,8 @@ export default function ProfilePage() {
       discord_handle: profile?.discord_handle || '',
       website_url: profile?.website_url || '',
     })
-    setAvatarPreview(profile?.avatar_url || '')
-    setBannerPreview(profile?.banner_url || '')
+    setAvatarPreview(profile?.avatar_url || null)
+    setBannerPreview(profile?.banner_url || null)
     setAvatarFile(null)
     setBannerFile(null)
   }
@@ -234,13 +339,15 @@ export default function ProfilePage() {
 
   if (!isConnected) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center">
+      <div className="relative min-h-screen py-12">
         <div className="animated-gradient fixed inset-0 -z-10 opacity-30" />
-        <div className="glass-card max-w-md rounded-2xl border border-white/10 p-12 text-center">
-          <h2 className="text-2xl font-bold text-white">Connect Your Wallet</h2>
-          <p className="mt-2 text-slate-400">
-            Please connect your wallet to view your profile
-          </p>
+        <div className="mx-auto flex min-h-[calc(100vh-6rem)] items-center justify-center px-4">
+          <div className="glass-card max-w-md rounded-2xl border border-white/10 p-12 text-center">
+            <h2 className="text-2xl font-bold text-white">Connect Your Wallet</h2>
+            <p className="mt-2 text-slate-400">
+              Please connect your wallet to view your profile
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -494,7 +601,7 @@ export default function ProfilePage() {
         </div>
 
         {/* NFT Grid */}
-        {isLoading ? (
+        {isLoadingNFTs ? (
           <div className="flex min-h-[400px] items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
           </div>

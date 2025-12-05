@@ -173,10 +173,13 @@
     "profile": {
       "updated": "Perfil atualizado com sucesso!",
       "updateFailed": "Falha ao atualizar perfil",
-      "uploadingAvatar": "Enviando avatar para IPFS...",
-      "uploadingBanner": "Enviando banner para IPFS...",
+      "uploadingAvatar": "Enviando avatar...",
+      "uploadingBanner": "Enviando banner...",
       "savingDatabase": "Salvando no banco de dados...",
-      "saving": "Salvando perfil..."
+      "saving": "Salvando perfil...",
+      "avatarTooLarge": "Avatar deve ter menos de 2MB",
+      "bannerTooLarge": "Banner deve ter menos de 5MB",
+      "invalidImageType": "Apenas imagens JPEG, PNG, GIF e WebP são permitidas"
     },
     "auth": {
       "required": "Autenticação necessária. Por favor, assine a mensagem para verificar sua carteira.",

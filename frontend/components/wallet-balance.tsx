@@ -3,7 +3,7 @@
 import { useAccount, useBalance } from 'wagmi'
 import { formatUnits } from 'viem'
 import { TOKENS } from '@/lib/tokens'
-import { Wallet, ChevronDown } from 'lucide-react'
+import { Wallet, ChevronDown, ExternalLink } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 
@@ -30,28 +30,59 @@ export function WalletBalance() {
     }
   }, [isOpen])
   
-  // Get native USDC balance
-  const { data: usdcBalance, isLoading: usdcLoading } = useBalance({
+  // Get USDC balance (ERC-20 token)
+  const { data: usdcBalance, isLoading: usdcLoading, refetch: refetchUsdc } = useBalance({
     address: address,
+    token: TOKENS.USDC as `0x${string}`,
+    query: {
+      enabled: !!address,
+      staleTime: 0, // Always fetch fresh data
+    }
   })
 
-  // Get EURC balance
-  const { data: eurcBalance, isLoading: eurcLoading } = useBalance({
+  // Get EURC balance (ERC-20 token with 18 decimals)
+  const { data: eurcBalance, isLoading: eurcLoading, refetch: refetchEurc } = useBalance({
     address: address,
     token: TOKENS.EURC as `0x${string}`,
+    query: {
+      enabled: !!address,
+      staleTime: 0, // Always fetch fresh data
+    }
   })
+
+  // Debug logs
+  useEffect(() => {
+    if (usdcBalance) {
+      console.log('USDC Balance:', {
+        token: TOKENS.USDC,
+        value: usdcBalance.value.toString(),
+        decimals: usdcBalance.decimals,
+        formatted: formatUnits(usdcBalance.value, usdcBalance.decimals),
+      })
+    }
+  }, [usdcBalance])
+
+  useEffect(() => {
+    if (eurcBalance) {
+      console.log('EURC Balance:', {
+        token: TOKENS.EURC,
+        value: eurcBalance.value.toString(),
+        decimals: eurcBalance.decimals,
+        formatted: formatUnits(eurcBalance.value, eurcBalance.decimals),
+      })
+    }
+  }, [eurcBalance])
 
   if (!isConnected || !address) {
     return null
   }
 
-  // Format balance - Arc uses 18 decimals internally despite being USDC
-  const formatBalance = (value: bigint | undefined) => {
+  // Format balance with correct decimals
+  const formatBalance = (value: bigint | undefined, decimals: number = 18) => {
     if (!value) return '0.00'
     
     try {
-      // Use 18 decimals (the actual format from Arc)
-      const formatted = formatUnits(value, 18)
+      const formatted = formatUnits(value, decimals)
       const number = parseFloat(formatted)
       
       // Format with commas and 2 decimals
@@ -65,8 +96,10 @@ export function WalletBalance() {
     }
   }
 
-  const usdcFormatted = formatBalance(usdcBalance?.value)
-  const eurcFormatted = formatBalance(eurcBalance?.value)
+  // USDC uses decimals from the token contract
+  const usdcFormatted = formatBalance(usdcBalance?.value, usdcBalance?.decimals || 18)
+  // EURC uses decimals from the token contract
+  const eurcFormatted = formatBalance(eurcBalance?.value, eurcBalance?.decimals || 18)
 
   // Don't show if still loading
   if (usdcLoading && eurcLoading) {
@@ -132,6 +165,17 @@ export function WalletBalance() {
                   ${totalValue.toFixed(2)}
                 </span>
               </div>
+
+              {/* Explorer Link */}
+              <a
+                href={`https://testnet.arcscan.app/address/${address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-violet-500/10 px-3 py-2 text-xs font-medium text-violet-400 transition-colors hover:bg-violet-500/20"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View on Explorer
+              </a>
             </div>
           </div>
       )}

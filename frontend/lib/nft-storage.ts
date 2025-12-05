@@ -1,14 +1,7 @@
-// Using Pinata IPFS API for reliable, free uploads
-// No SDK needed - using HTTP API directly
+// Using Cloudflare R2 for reliable, free storage
+// Documentation: https://developers.cloudflare.com/r2/
 
-// Get Pinata JWT token from environment
-const getPinataToken = () => {
-  const token = process.env.NEXT_PUBLIC_PINATA_JWT;
-  if (!token) {
-    throw new Error('Pinata JWT token not configured. Set NEXT_PUBLIC_PINATA_JWT in .env.local');
-  }
-  return token;
-};
+import { uploadToR2 } from './r2-storage';
 
 export interface NFTMetadata {
   name: string;
@@ -29,53 +22,54 @@ export interface UploadProgress {
 }
 
 /**
- * Upload image file to IPFS via Pinata v3 API
- * Returns the IPFS gateway URL for the uploaded image
+ * Upload image file to R2
+ * Returns the public URL for the uploaded image
  */
 export async function uploadImage(
   file: File | Blob,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string> {
   try {
-    const token = getPinataToken();
+    // Convert File/Blob to Buffer for server-side upload
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
     
-    // Use Pinata v3 API
+    // Simulate progress
+    if (onProgress) {
+      onProgress({ loaded: 0, total: file.size, percentage: 0 });
+    }
+    
+    // Note: For client-side, we'll need to use an API route
+    // This is a placeholder that will be called from the server
     const formData = new FormData();
     formData.append('file', file);
-
-    const response = await fetch('https://uploads.pinata.cloud/v3/files', {
+    
+    const response = await fetch('/api/upload-image', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
       body: formData,
     });
-
+    
     if (!response.ok) {
       const error = await response.text();
       throw new Error(`Upload failed: ${response.status} - ${error}`);
     }
-
+    
     const result = await response.json();
-    const cid = result.data.cid;
     
     // Simulate progress for better UX
     if (onProgress) {
       onProgress({ loaded: file.size, total: file.size, percentage: 100 });
     }
-
-    // CRITICAL FIX: Use dedicated gateway to avoid CORS/rate limit issues
-    // Free tier public gateway has 429 rate limits
-    const gatewayDomain = process.env.NEXT_PUBLIC_PINATA_GATEWAY_DOMAIN || 'gateway.pinata.cloud';
-    return `https://${gatewayDomain}/ipfs/${cid}`;
+    
+    return result.imageUrl;
   } catch (error) {
-    console.error('Error uploading image to IPFS:', error);
-    throw new Error('Failed to upload image to IPFS');
+    console.error('Error uploading image:', error);
+    throw new Error('Failed to upload image');
   }
 }
 
 /**
- * Upload complete NFT metadata to IPFS via Pinata v3 API
+ * Upload complete NFT metadata to R2
  * This includes the image URL and all other metadata
  */
 export async function uploadMetadata(
@@ -83,22 +77,15 @@ export async function uploadMetadata(
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string> {
   try {
-    const token = getPinataToken();
-    
-    // Convert metadata to JSON blob
+    // Convert metadata to JSON string
     const metadataJson = JSON.stringify(metadata, null, 2);
-    const metadataBlob = new Blob([metadataJson], { type: 'application/json' });
     
-    // Use Pinata v3 API
-    const formData = new FormData();
-    formData.append('file', metadataBlob, 'metadata.json');
-
-    const response = await fetch('https://uploads.pinata.cloud/v3/files', {
+    const response = await fetch('/api/upload-metadata', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify({ metadata }),
     });
 
     if (!response.ok) {
@@ -107,25 +94,23 @@ export async function uploadMetadata(
     }
 
     const result = await response.json();
-    const cid = result.data.cid;
     
     // Simulate progress
     if (onProgress) {
-      onProgress({ loaded: metadataBlob.size, total: metadataBlob.size, percentage: 100 });
+      const size = new Blob([metadataJson]).size;
+      onProgress({ loaded: size, total: size, percentage: 100 });
     }
 
-    // Use same gateway for consistency
-    const gatewayDomain = process.env.NEXT_PUBLIC_PINATA_GATEWAY_DOMAIN || 'gateway.pinata.cloud';
-    return `https://${gatewayDomain}/ipfs/${cid}`;
+    return result.metadataUrl;
   } catch (error) {
-    console.error('Error uploading metadata to IPFS:', error);
-    throw new Error('Failed to upload metadata to IPFS');
+    console.error('Error uploading metadata:', error);
+    throw new Error('Failed to upload metadata');
   }
 }
 
 /**
  * Complete flow: upload image first, then upload metadata with image URL
- * Returns the metadata URI to be used in the NFT contract
+ * Returns imageUrl (gateway HTTP) and metadataUrl (ipfs:// for contract)
  */
 export async function uploadNFT(
   imageFile: File | Blob,
@@ -153,29 +138,32 @@ export async function uploadNFT(
 }
 
 /**
- * Fetch metadata from IPFS URL
+ * Fetch metadata from R2 URL
  * Useful for displaying NFT details
  */
-export async function fetchMetadata(ipfsUrl: string): Promise<NFTMetadata> {
+export async function fetchMetadata(url: string): Promise<NFTMetadata> {
   try {
-    // Convert ipfs:// to https gateway if needed
-    const gatewayUrl = ipfsUrl.replace('ipfs://', 'https://nftstorage.link/ipfs/');
-    
-    const response = await fetch(gatewayUrl);
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch metadata: ${response.statusText}`);
     }
     
     return await response.json();
   } catch (error) {
-    console.error('Error fetching metadata from IPFS:', error);
+    console.error('Error fetching metadata:', error);
     throw new Error('Failed to fetch NFT metadata');
   }
 }
 
 /**
- * Check if Pinata is properly configured
+ * Check if R2 is properly configured
  */
 export function isConfigured(): boolean {
-  return !!process.env.NEXT_PUBLIC_PINATA_JWT;
+  return !!(
+    process.env.R2_ENDPOINT &&
+    process.env.R2_ACCESS_KEY_ID &&
+    process.env.R2_SECRET_ACCESS_KEY &&
+    process.env.R2_BUCKET_NAME &&
+    process.env.R2_PUBLIC_URL
+  );
 }
