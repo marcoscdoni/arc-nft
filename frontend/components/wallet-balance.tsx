@@ -174,7 +174,7 @@ export function WalletBalance() {
                 className="mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-violet-500/10 px-3 py-2 text-xs font-medium text-violet-400 transition-colors hover:bg-violet-500/20"
               >
                 <ExternalLink className="h-3 w-3" />
-                View on Explorer
+                {t('viewOnExplorer')}
               </a>
             </div>
           </div>

@@ -1,6 +1,8 @@
 'use client'
 
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 
 interface TransactionStatusProps {
   hash?: `0x${string}`
@@ -23,6 +25,8 @@ export function TransactionStatus({
   errorMessage = 'Transaction failed',
   explorerUrl = 'https://testnet.arcscan.app',
 }: TransactionStatusProps) {
+  const t = useTranslations('wallet')
+  
   if (!isLoading && !isSuccess && !isError) {
     return null
   }
@@ -41,7 +45,7 @@ export function TransactionStatus({
                 rel="noopener noreferrer"
                 className="mt-1 text-sm text-violet-400 hover:text-violet-300"
               >
-                View on Explorer →
+                {t('viewOnExplorer')} →
               </a>
             )}
           </div>
@@ -60,7 +64,7 @@ export function TransactionStatus({
                 rel="noopener noreferrer"
                 className="mt-1 text-sm text-violet-400 hover:text-violet-300"
               >
-                View on Explorer →
+                {t('viewOnExplorer')} →
               </a>
             )}
           </div>
